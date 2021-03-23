@@ -3,7 +3,7 @@ const router = express.Router();
 const { deleteUserId,deleteVideo } = require("../controllers/auth");
 const { Verify } = require("../middleware/auth");
 
-router.route("/deleteVideo").post(deleteVideo);
-router.route("/deleteUserId").post(deleteUserId);
+router.route("/deleteVideo/:videoid").post(Verify,deleteVideo);
+router.route("/deleteUserId/:userid").post(Verify,deleteUserId);
 
 module.exports = router;

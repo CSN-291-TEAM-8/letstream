@@ -6,22 +6,25 @@ const VideoSchema = new Schema({
         type:String,
         required:true
     },
+    title:{
+        type:String,
+        required:true
+    },
     url:{
+        type:String,        
+    },
+    servername:{
         type:String,
         required:true
-    },
-    poster:{
-        type:String,
-        required:true
-    },
-    presentors:[{type:mongoose.Schema.ObjectId,ref:"User"}],
+    },    
+    presenters:[{type:String}],
     tags: {
         type: [String],
       },    
       visibility:{
-          type:String //either public,custom or for subscribers only
+          type:String //either public,custom or sub-only
       },
-      accesibility:[{type:mongoose.Schema.ObjectId,ref:"User"}],
+      accesibility:[{type:String}],
     organiser:{
         type:mongoose.Schema.ObjectId,
         ref:"User",
@@ -35,9 +38,30 @@ const VideoSchema = new Schema({
         type: Number,
         default: 0,
       },
+    likedBy:[{
+        type: mongoose.Schema.ObjectId,   
+    }],
+    dislikedBy: [{
+        type: mongoose.Schema.ObjectId,        
+      }],
+      comments:{
+        type: mongoose.Schema.ObjectId,
+        ref:"Comment"
+      },
+      reportCount:{
+          type:Number,
+          default:0
+      },
     createdAt:{
         type:Date,
         default: Date.now
     }
+});
+VideoSchema.pre('remove', function(next) {
+    this.model('Comment').remove({ video: this._id }, next);
+    this.model("Report").remove({VideoId:this._id},next);
+    this.model("Notification").remove({VideoId:this._id},next);
+    this.model("likedVideo").remove({VideoId:this._id},next);
+    this.model("savedVideo").remove({VideoId:this._id},next);
 });
 module.exports = mongoose.model("Video", VideoSchema);

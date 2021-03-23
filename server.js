@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const {startSocket} = require("./utils/socketconnection");
 const helmet = require("helmet");
 const auth = require("./routes/auth");
 const admin = require("./routes/admin");
@@ -28,6 +29,7 @@ app.use(function (req, res, next) {
       next();
   });
 DB();
+startSocket();
 
 app.use("/auth", auth);
 app.use("/admin", admin);
@@ -37,5 +39,5 @@ app.use("/users", user);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-export const server = app.listen(PORT, console.log(`Server started at http://localhost:${PORT}`));
+exports.server = app.listen(PORT, console.log(`Server started at http://localhost:${PORT}`));
 

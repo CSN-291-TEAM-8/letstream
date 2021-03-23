@@ -15,25 +15,24 @@ const CommentSchema = new mongoose.Schema({
     type: String,
     required: [true, "Please enter the comment"],
     trim: true,
-  },
-  replyCount:{
-    type:Number,
-    default:0
-  },
+  },  
   likesCount:{
     type:Number,
     default:0
   },
+  likedBy:[{
+    type: mongoose.Schema.ObjectId,   
+  }],
+  dislikedBy: [{
+    type: mongoose.Schema.ObjectId,        
+  }],
   dislikesCount:{
     type:Number,
     default:0
   },
   Repliedto:{
-    type:mongoose.Schema.ObjectId,
-                  //if it is not blank
-                  // we will know that it is not an original comment
-    ref:"Comment",
-    
+    type:String                  //if it is not blank
+                  // we will know that it is not a reply to a comment   
   },
   createdAt: {
     type: Date,

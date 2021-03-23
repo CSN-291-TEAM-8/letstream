@@ -9,9 +9,9 @@ const ReportSchema = new mongoose.Schema({
         type:mongoose.Schema.ObjectId,
         ref:"User"
     },
-    postId:{
+    VideoId:{
         type:mongoose.Schema.ObjectId,
-        ref:"Post"
+        ref:"Video"
     }
 })
 module.exports = mongoose.model("Report", ReportSchema);

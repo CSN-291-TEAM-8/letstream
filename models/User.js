@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-const userSchema = new schema({
+const userSchema = new Schema({
     fullname: {
       type: String,
       required: [true, "Your fullname"],
@@ -19,11 +19,12 @@ const userSchema = new schema({
       trim: true,
       unique: true,
     },
+    
     isAdmin:{
       type:Boolean,
       default:false
     },
-    unseennotice:[{ type: mongoose.Schema.ObjectId,ref:"Notice"}],    
+    unseennotice:[{ type: mongoose.Schema.ObjectId,ref:"Notification"}],    
     email: {
       type: String,
       required: [true, "Your email"],
@@ -64,6 +65,12 @@ const userSchema = new schema({
   userSchema.methods.checkPassword = async function (password) {
     return await bcrypt.compare(password, this.password);
   };
-  
+  userSchema.pre('remove', function(next) {
+    this.model('Comment').remove({ user: this._id }, next);
+    this.model("Report").remove({reporter:this._id},next);
+    this.model("Notification").remove({sender:this._id},next);
+    this.model("likedVideo").remove({userid:this._id},next);
+    this.model("savedVideo").remove({userid:this._id},next);
+});
   module.exports = mongoose.model("User", userSchema);
   
