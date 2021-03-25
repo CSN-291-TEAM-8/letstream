@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { uploadVideo,editDetails,changePassword,requestotp,feed,sendNotice,subscribe,removeSubscriber ,searchUser,getUser,savevideo} = require("../controllers/user");
+const { uploadVideo,editDetails,changePassword,requestotp,feed,sendNotice,subscribe,removeSubscriber ,searchUser,getUser,savevideo, addtoViewedVideo} = require("../controllers/user");
 
 const { Verify } = require("../middleware/auth");
 
@@ -13,6 +13,7 @@ router.route("/uploadvideo").post(Verify,uploadVideo);//if it's not live streami
 router.route("/:username").get(Verify, getUser);
 router.route("/subscribe/:id").post(Verify,subscribe);
 router.route("/savevideo/:vid").post(Verify,savevideo);
+router.route("/addtoview/:vid").post(Verify,addtoViewedVideo);
 router.route("/removesubscriber/:id").post(Verify,removeSubscriber);
 router.route("/search/:reg").get(searchUser);
 

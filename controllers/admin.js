@@ -30,7 +30,7 @@ exports.deleteVideo = async (req, res, next) =>{
     res.status(200).json({success:true,message:"Video was deleted successfully"});
 }
 
-exports.deleteUser = async(req,res,next) =>{
+exports.deleteUserId = async(req,res,next) =>{
     if(!req.user.isAdmin)
         return next({
             statusCode:401,

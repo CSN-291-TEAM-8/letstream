@@ -19,7 +19,7 @@ const userSchema = new Schema({
       trim: true,
       unique: true,
     },
-    
+    history:[{ type: mongoose.Schema.ObjectId,ref:"Video"}],
     isAdmin:{
       type:Boolean,
       default:false

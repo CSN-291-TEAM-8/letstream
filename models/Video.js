@@ -9,18 +9,22 @@ const VideoSchema = new Schema({
     title:{
         type:String,
         required:true
-    },
+    },//????? finding total time a video will run    
     url:{
         type:String,        
+    },
+    mimetype:{
+        type:"String"
     },
     servername:{
         type:String,
         required:true
     },    
-    presenters:[{type:String}],
-    tags: {
-        type: [String],
-      },    
+    presenters:[{
+        type:mongoose.Schema.ObjectId,
+        ref:"User",
+    }],
+       
       visibility:{
           type:String //either public,custom or sub-only
       },
@@ -33,6 +37,9 @@ const VideoSchema = new Schema({
     likesCount:{
         type:Number,
         default:0
+    },
+    keywords:{
+        type:[String]
     },
     dislikesCount: {
         type: Number,

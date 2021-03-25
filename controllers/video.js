@@ -3,17 +3,21 @@ const Video = require("../models/Video");
 const Report = require("../models/Report");
 const Notification = require("../models/Notification");
 const fs = require("fs");
+const path = require("path");
+const {SOCKET,IO} = require("../utils/socketconnection");
 const Comment = require("../models/Comment");
 const transporter = require("../utils/nodemailer");
 const likedVideo = require("../models/likedVideo");
 const savedVideo = require("../models/savedVideo");
+const socket = SOCKET();
+const io = IO();
 
 
-exports.checkAccessibility = (req,video)=>{
+exports.checkAccessibility = async(req,video)=>{
 
     const organiser = await User.findById(video.oraganiser);
 
-    return video.vis=="public"||video.oraganiser==req.user.id||video.presenters.indexOf(req.user.username)>-1||
+    return video.vis=="public"||video.oraganiser==req.user.id||video.presenters.indexOf(req.user.id)>-1||
     (video.vis=="sub-only"&&organiser.subscribers.toString().indexOf(req.user.id.toString())>-1)
     ||(video.vis=="custom"&&video.accessibility.indexOf(req.user.username)>-1)
 }
@@ -41,17 +45,10 @@ exports.getvideo = async(req,res,next) =>{
             message:"You are not allowed to access this stream"
         })
     }
-    const range = req.headers.range;
-    if (!range) {
-        return next({
-            statusCode:401,
-            message:"Requires range headers"
-        })
-    }
-  
+    const range = req.headers.range; 
     
-    const videoPath = `../uploads/${vid.url}`;
-    const videoSize = fs.statSync(`../uploads/${vid.url}`).size;
+    const videoPath = path.join(__dirname,`../uploads/${vid.servername}`);
+    const videoSize = fs.statSync(videoPath).size;
   
     
     const CHUNK_SIZE = 10 ** 6; // 1MB
@@ -60,21 +57,31 @@ exports.getvideo = async(req,res,next) =>{
   
     // Create headers
     const contentLength = end - start + 1;
+    
     const headers = {
       "Content-Range": `bytes ${start}-${end}/${videoSize}`,
       "Accept-Ranges": "bytes",
       "Content-Length": contentLength,
-      "Content-Type": "video/mp4",
+      "Content-Type": vid.mimetype,
     };
   
     // HTTP Status 206 for Partial Content
-    res.writeHead(206, headers);
-  
+    
     // create video read stream for this particular chunk
     const videoStream = fs.createReadStream(videoPath, { start, end });
   
     // Stream the video chunk to the client
-    videoStream.pipe(res);
+    
+    if (!range) {
+        delete headers["Content-Range"];
+        delete headers["Accept-Ranges"];
+        videoStream.pipe(res);
+    }
+    else{
+        res.writeHead(206, headers);
+        videoStream.pipe(res);
+    }
+    
 
 }
 exports.sendvideoinfo = async(req,res,next)=>{
@@ -124,7 +131,7 @@ exports.deletevideo = async(req,res,next)=>{
     }
 }
 
-exports.highlight = async(req,res,next) =>{
+exports.Highlight = async(req,res,next) =>{
    const highlighedvideos =  await Video.find({}).sort((v)=>v.likesCount-v.dislikesCount);
    //select accessible videos
    const accessibleones = highlightedvideos.filter(function(v){
@@ -170,7 +177,7 @@ exports.toggleLike = async(req,res,next) =>{
     res.status(200).json({success:true});
 }
 
-exports.toggledisLike = async(req,res,next) =>{
+exports.toggledislike = async(req,res,next) =>{
     const v = await Video.findById(req.params.id);
     if(!v){
         return next({
@@ -238,11 +245,11 @@ exports.addComment = async(req,res,next)=>{
     comment = await comment
     .populate({ path: "user", select: "avatar username fullname" })
     .execPopulate();
-
+    io.to(req.params.id).emit("newmsg",comment);
   res.status(200).json({ success: true, data: comment});
     
 }
-exports.deletecomment = async(req,res,next)=>{
+exports.deleteComment = async(req,res,next)=>{
     const video = await Video.findById(req.params.id);
    if(!video)
      return next({
@@ -297,6 +304,20 @@ exports.reportVideo = async(req,res,next)=>{
         text:"Hello admin,\nUsers of letstream are reporting the video stream Videoed by "+video.oraganiser.fullname+"\nKindly,take the suitable action against it.URL of the video is \n\n"+video.url+"\nTotal reports filled have reached "+video.reportCount+"\n\nHappy Streaming",
         
       }; 
+      const admin = await User.find({isAdmin:true});
+      const adminid = [];
+      for(x of admin){
+          adminid.push(x._id);
+      }
+      if(admin){
+          await Notification.create({
+              Message:"Hello admin,\nUsers of letstream are reporting the video stream Videoed by "+video.oraganiser.fullname+"\nKindly,take the suitable action against it.\nTotal reports filled have reached "+video.reportCount,
+              sender:"system",
+              receiver:adminid,
+              url:video.url,
+              VideoId:video._id
+          })
+      }
       if(video.reportCount%10==0){
         transporter.sendMail(msg).then(()=>{
             res.status(200).json({success:true,message:"Kindly check your email for OTP"});
@@ -315,7 +336,9 @@ exports.searchVideo = async(req,res,next)=>{
     
       if (req.query.title) {
         const regex = new RegExp(req.query.title, "i");
-        Videos = await Video.find({ title: regex });
+        Videos = await Video.find({ title: regex }).populate({path:"organiser",select:"username"});
+        Videos2 = await Video.find({keywords:{$in:[regex]}}).populate({path:"organiser",select:"username"});
+        Videos = Videos2.concat(videos).unique();
       }
       Videos = Videos.filter((Video) => { return this.checkAccessibility(req,Video)})
       res.status(200).json({ success: true, data: Videos});

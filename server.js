@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const {startSocket} = require("./utils/socketconnection");
@@ -6,7 +7,7 @@ const auth = require("./routes/auth");
 const admin = require("./routes/admin");
 const video = require("./routes/video");
 const user = require("./routes/user");
-const errorHandler = require("./middlewares/errorHandler");
+const errorHandler = require("./middleware/errorhandle");
 const DB = require("./utils/db.config");
 
 const app = express();

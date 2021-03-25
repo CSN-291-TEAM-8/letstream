@@ -1,7 +1,6 @@
 const User = require("../models/User");
 const OTPmodel = require("../models/OTPmodel");
 const bcrypt = require("bcryptjs");
-const User = require("../models/User");
 var transporter = require("../utils/nodemailer");
 exports.generateOTP =(n)=>{
   let s = 0;

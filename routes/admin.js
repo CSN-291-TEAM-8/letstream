@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { deleteUserId,deleteVideo } = require("../controllers/auth");
+const { deleteUserId,deleteVideo } = require("../controllers/admin");
 const { Verify } = require("../middleware/auth");
 
 router.route("/deleteVideo/:videoid").post(Verify,deleteVideo);

@@ -9,7 +9,10 @@ const likedVideo = require("../models/likedVideo");
 exports.getUser = async(req,res,next)=>{
     const user = await User.findOne({username:req.params.username}).populate({
         path:"videos",
-        select:"poster accessibility url title createdAt description visibility"
+        select:"accessibility url title createdAt description visibility"
+    }).populate({
+        path:"history",
+        select:"*"
     });
     if(!user){
         return next({
@@ -19,11 +22,60 @@ exports.getUser = async(req,res,next)=>{
     }
 
     user.videos = user.videos.filter((v)=>checkAccessibility(req,v));
+    user.history = user.history.filter((v)=>checkAccessibility(req,v));
     if(req.params.username==req.user.username){
         user.likedvideos = await likedVideo.find({userid:req.user.id}).sort("-createdAt");
         user.savedVideos = await savedVideo.find({userid:req.user.id}).sort("-createdAt");
     }
     res.status(200).json({success:true,data:user.videos});
+
+}
+exports.addtoViewedVideo = async(req,res,next)=>{
+    const vid = await Video.findById(req.params.vid);
+    if(!vid||!checkAccessibility(req,vid)){
+        return next({
+            statusCode:400,
+            message:"Action failed"
+        })
+    }
+
+   try{
+    await User.findByIdAndUpdate(req.user.id,{
+        $pull:{history:req.params.vid}
+    });
+    await User.findByIdAndUpdate(req.user.id,{
+        $push:{history:req.params.vid}
+    });
+   }
+   catch(err){
+       return next({
+           statusCode:400,
+           message:"Action failed"
+       })
+   }
+   res.status(200).json({success:true});
+}
+exports.removeFromHistory = async(req,res,next)=>{
+    const vid = await Video.findById(req.params.vid);
+    if(!vid){
+        return next({
+            statusCode:400,
+            message:"Action failed"
+        })
+    }
+
+   try{
+    await User.findByIdAndUpdate(req.user.id,{
+        $pull:{history:req.params.vid}
+    });    
+   }
+   catch(err){
+       return next({
+           statusCode:400,
+           message:"Action failed"
+       })
+   }
+   res.status(200).json({success:true});
 
 }
 
@@ -248,15 +300,13 @@ exports.editDetails = async (req, res, next) => {
     let videos = await Video.find({}).populate({
         path:"organiser",
         select:"video username"
-    }).populate({ path: "comments",  select: "text Repliedto",
-    populate: { path: "user", select: "video fullname username" }})
-    .sort("-createdAt")
+    }).sort("-createdAt")
     .lean()
-    .exec();;
+    .exec();
     videos = videos.filter(function(v){
         return checkAccessibility(res,v);
     });
-    videos.forEach(function(v){
+    videos.forEach(async function(v){
         v.isLiked = v.likedBy.includes(req.user.id);
         const isSaved = await savedVideo.findOne({userid:req.user.id,Videoid:v._id});
         if(isSaved){
@@ -304,21 +354,32 @@ exports.uploadVideo = async(req,res,next)=>{
         else {
             //Use the name of the input field (i.e. "video") to retrieve the uploaded file
             let video = req.files.video;
-            const name = generateOTP()+"_"+video.name;
+            const name = generateOTP(6)+"_"+video.name;
             const video2 = await Video.create({
                 description:req.body.description,
+                contentType:req.body.contentType,//video.contentType on client
                 title:req.body.title,
-                servername:name,
-                presenters:req.body.presenters,
-                tags:req.body.tags,
+                accessibility:req.body.accessibility,
+                servername:name,                         
+                keywords:req.body.keywords,
                 visibility:req.body.visibility,
-                oraganiser:req.body.organiser
+                oraganiser:req.user.id
             });
-            video2.url = `/stream/${video2._id.toString()}`;
+            video2.url = `/uploads/${video2._id.toString()}`;
             await video2.save();
             //Use the mv() method to place the file in upload directory (i.e. "uploads")
-            video.mv('../uploads/' +name);
-
+            video.mv('../uploads/' +name);            
+            
+            await Notification.create({
+                sender:req.user.username,
+                receiver:req.body.visibility=="custom"?req.body.accessibility:req.user.subscribers,
+                Message:req.body.visibility=="custom"?`${req.user.fullname}(channel-${req.user.username}) has invited you to watch a privately uploaded video`:`Your channel ${req.user.username} uploaded a video ${req.body.title}|${req.body.description}`,
+                type:"videoupload",
+                VideoId:video2._id,
+                url:video2.url,
+                avatar:req.user.avatar
+            })           
+        
             //send response
             res.send({
                 status: true,
