@@ -7,6 +7,7 @@ const auth = require("./routes/auth");
 const admin = require("./routes/admin");
 const video = require("./routes/video");
 const user = require("./routes/user");
+const chat = require("./routes/chat");
 const errorHandler = require("./middleware/errorhandle");
 const DB = require("./utils/db.config");
 
@@ -34,6 +35,7 @@ startSocket();
 
 app.use("/auth", auth);
 app.use("/admin", admin);
+app.use("/chat",chat);
 app.use("/videos", video);
 app.use("/users", user);
 
