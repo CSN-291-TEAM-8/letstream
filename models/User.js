@@ -24,7 +24,10 @@ const userSchema = new Schema({
       type:Boolean,
       default:false
     },
-    unseennotice:[{ type: mongoose.Schema.ObjectId,ref:"Notification"}],    
+    unseennotice:[{ type: mongoose.Schema.ObjectId,ref:"Notification"}], 
+    unseenmsg:{
+      type:[String], 
+    },    
     email: {
       type: String,
       required: [true, "Your email"],
