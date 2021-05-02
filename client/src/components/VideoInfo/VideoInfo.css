@@ -1,0 +1,52 @@
+.videoinfo_stats, .videoinfo_channel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.videoinfo_headline > h1 {
+    font-weight: 400;
+    font-size: large;
+}
+
+.videoinfo_stats > p {
+    font-size: medium;
+    color: gray;
+}
+
+.videoinfo_stats > * {
+    margin-top: 2px;
+}
+
+.videoinfo_likes > * {
+    padding-left: 0;
+    padding-top: 0;
+}
+
+.videoinfo_likes, .videoinfo_channel > div {
+    display: flex;
+    align-items: center;
+}
+
+hr {
+    height: 1px;
+    border: 0;
+    background-color: lightgray;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.videoinfo_channelinfo {
+    padding-left: 5px;
+}
+
+.videoinfo_channeltitle {
+    font-size: medium;
+    margin: 2px;
+}
+
+.videoinfo_channelsubs {
+    color: gray;
+    font-size: small;
+    margin: 0;
+}
