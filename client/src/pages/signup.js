@@ -1,7 +1,7 @@
 import React,{useState} from 'react'
 import SignUp from '../components/auth/SignUp/index'
 import Navbar from '../components/Navbar'
-import Sidebar from '../components/Sidebar'
+import Sidebar from '../components/Sidebar/Smaller_device/index'
 const SignUpPage = () => {
     const [isOpen, setIsOpen] = useState(false);
 
