@@ -1,15 +1,16 @@
 import styled from 'styled-components'
 import img from '../../../assets/auth2.jpeg'
-
+import Input from "@material-ui/core/Input";
+import {NavLink} from 'react-router-dom'
 export const Container = styled.div`
-    min-height: 800px;
-    position: fixed;
+    height: 770px;
+    position: relative;
     bottom: 0;
     left: 0;
     right: 0;
     top: 0;
     z-index: 0;
-    overflow: hidden;
+    
     background: linear-gradient(
         100deg,
         rgba(64, 98, 191, 1) 0%,
@@ -73,11 +74,14 @@ export const FormLabel = styled.label`
     color: #fff;
 `;
 
-export const FormInput = styled.input`
+export const FormInput = styled(Input)`
     padding: 16px 16px;
     margin-bottom: 32px;
     border: none;
     border-radius: 4px;
+    background: #fff;
+    height: 50px;
+    
 `;
 
 export const FormButton = styled.button`
@@ -89,11 +93,37 @@ export const FormButton = styled.button`
     color: #fff;
     font-size: 20px;
     cursor: pointer;
+    margin-bottom: 24px;
 `;
 
 export const Text = styled.span`
     text-align: center;
     margin-top: 24px;
     color: #fff;
-    font-size: 14px;
+    font-size: 16px;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: bold;
+
 `;
+
+export const FormFooter = styled.div`
+    text-align: center;
+    margin-top: 24px;
+    color: #fff;
+    font-size: 16px;
+`
+
+export const Icon = styled(NavLink)`
+    margin-Left: 32px;
+    margin-top: 32px;
+    text-decoration: none;
+    color: #fff;
+    font-weight: 700;
+    font-size: 32px;
+
+    @media screen and(max-width: 480px){
+        margin-left: 16px;
+        margin-top: 8px;
+    }
+`
