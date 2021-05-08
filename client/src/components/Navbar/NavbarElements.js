@@ -9,6 +9,7 @@ export const Nav = styled.nav`
     position: sticky;
     top: 0;
     z-index: 9;
+    
 
     @media screen and (max-width : 960px){
         transition: 0.8s all ease;
@@ -20,7 +21,7 @@ export const NavbarContainer = styled.div`
     justify-content: space-between;
     height: 80px;
     z-index: 1;
-    wigth: 100%;
+    width: 100%;
     padding: 0 24px;
     max-width: 1400px;
 `;
