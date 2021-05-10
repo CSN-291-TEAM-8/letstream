@@ -1,5 +1,4 @@
-export const getVideos = ()=>{ //get an array of video or for getting single video use video[0]
-    const Videos = [
+export const Videos = [
         {
             url:"https://res.cloudinary.com/dv9k3us3f/video/upload/v1618315460/drvy5kbnabydzmgkg9oe.mp4",
             title:"First",
@@ -99,5 +98,3 @@ export const getVideos = ()=>{ //get an array of video or for getting single vid
         },
 
     ]
-    return Videos;
-}
