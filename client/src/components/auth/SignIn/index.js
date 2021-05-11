@@ -71,7 +71,7 @@ const SignIn = () => {
             localStorage.setItem("accesstoken",d.token);
             connect("/auth/me").then((user)=>{
                 localStorage.setItem("user",JSON.stringify(user.data));
-                window.location.reload();
+                window.location.replace(location.next.pathname); 
             }).catch(err=>{
                 setLoading(false);
                 console.log(err);
