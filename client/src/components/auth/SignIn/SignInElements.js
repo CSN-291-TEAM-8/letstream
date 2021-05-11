@@ -1,7 +1,8 @@
 import styled from 'styled-components'
-import img from '../../../assets/auth2.jpeg'
+import img from '../../../assets/auth4.jpeg'
 import Input from "@material-ui/core/Input";
 import {NavLink} from 'react-router-dom'
+
 export const Container = styled.div`
     height: 770px;
     position: relative;
@@ -10,12 +11,9 @@ export const Container = styled.div`
     right: 0;
     top: 0;
     z-index: 0;
+    background-image: url(${img});
+    background-size : cover
     
-    background: linear-gradient(
-        100deg,
-        rgba(64, 98, 191, 1) 0%,
-        rgba(10, 201, 122, 1) 100%
-    );
 
 `;
 
@@ -43,7 +41,7 @@ export const FormContent = styled.div`
 `;
 
 export const Form = styled.form`
-    ${'' /* background: #010101; */}
+    
     background-image: url(${img});
     max-width: 400px;
     height: auto;
@@ -62,29 +60,25 @@ export const Form = styled.form`
 
 export const FormH1 = styled.h1`
     margin-bottom: 40px;
-    color: #fff;
+    color: #e6fff9;
     font-size: 20px;
     font-weight: 400;
     text-align: center;
 `;
 
-export const FormLabel = styled.label`
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: #fff;
-`;
 
 export const FormInput = styled(Input)`
     padding: 16px 16px;
     margin-bottom: 32px;
     border: none;
     border-radius: 4px;
-    background: #fff;
+    background: #e6fff9;
     height: 50px;
     
 `;
 
 export const FormButton = styled.button`
+
     ${'' /* background: #01bf71; */}
     background: #9999ff;
     padding: 12px 0;
@@ -99,7 +93,7 @@ export const FormButton = styled.button`
 export const Text = styled.span`
     text-align: center;
     margin-top: 24px;
-    color: #fff;
+    color: #e6fff9;
     font-size: 16px;
     text-decoration: underline;
     cursor: pointer;
@@ -110,7 +104,7 @@ export const Text = styled.span`
 export const FormFooter = styled.div`
     text-align: center;
     margin-top: 24px;
-    color: #fff;
+    color: #e6fff9;
     font-size: 16px;
 `
 
