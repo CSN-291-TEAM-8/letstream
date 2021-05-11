@@ -1,9 +1,11 @@
 import React,{useState} from 'react'
-import {useHistory} from 'react-router-dom'
+import {useHistory,useLocation} from 'react-router-dom'
 import IconButton from "@material-ui/core/IconButton";
 import Visibility from "@material-ui/icons/Visibility";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import VisibilityOff from "@material-ui/icons/VisibilityOff";
+import {connect} from "../../../utils";
+import CircularProgress from "@material-ui/core/CircularProgress";
 
 
 import { 
@@ -16,21 +18,28 @@ import {
     FormInput, 
     FormWrap 
 } from './SignInElements'
+import { toast } from 'react-toastify';
+
+export const logout = ()=>{
+    localStorage.clear();
+    window.location.reload();
+}
 
 
 const SignIn = () => {
-
+    let location = useLocation();
+    location = location.state || { next: { pathname: "/" } };
     const [data,setData] = useState({
         email: "",
         password: ""
     });
-
+    
     
     const [submittedData,setSubmittedData] = useState();
     const history = useHistory();
     const handleClick = () => history.push('/AccountRecovery');
     const [showPassword, setValues] = useState(false);
-
+    const [loading,setLoading] = useState(false);
     
     const handleClickShowPassword = () => {
       setValues(!showPassword );
@@ -53,8 +62,25 @@ const SignIn = () => {
     }
 
     const onsubmit = (event) => {
+        if(loading){
+            return;
+        }
+        setLoading(true);
         event.preventDefault();
-        setSubmittedData(data);
+        connect("/auth/login",{body:data}).then((d)=>{
+            localStorage.setItem("accesstoken",d.token);
+            connect("/auth/me").then((user)=>{
+                localStorage.setItem("user",JSON.stringify(user.data));
+                window.location.reload();
+            }).catch(err=>{
+                setLoading(false);
+                console.log(err);
+            })
+
+        }).catch(err=>{
+            setLoading(false);
+            toast.error(err.message);
+        })
     }
    
     
@@ -66,8 +92,8 @@ const SignIn = () => {
                       <Form onSubmit = {onsubmit}>
                         <FormH1>Sign in to your account</FormH1>
                         <FormInput 
-                        type='email' 
-                        placeholder = 'Enter Email'
+                        type='text' 
+                        placeholder = 'Username or Email'
                         name = "email"
                         onChange = {inputEvent}
                         value = {data.email} 
@@ -91,7 +117,7 @@ const SignIn = () => {
                             </InputAdornment> 
                         }
                         required />
-                        <FormButton type='submit'>Sign In</FormButton>
+                        <FormButton type='submit'>{!loading?"Sign In":<CircularProgress size={23}/>}</FormButton>
                         <Text onClick={handleClick}>Forgot password?</Text>
                       </Form>
                   </FormContent>

@@ -6,7 +6,8 @@ export const Nav = styled.nav`
     background: #000;
     height: 80px;
     font-size: 1rem;
-    position: sticky;
+    position: fixed;
+    width: 100%;    
     top: 0;
     z-index: 9;
     
@@ -30,6 +31,7 @@ export const NavLogo = styled(NavLink)`
     color: #99ccff;
     justify-self: flex-start;
     cursor: pointer;
+   
     font-size: 1.5rem;
     display: flex;
     align-items: center;

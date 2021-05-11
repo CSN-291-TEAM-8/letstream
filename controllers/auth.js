@@ -87,7 +87,7 @@ exports.OTPVerify = async(req,res,next) =>{
   transporter.sendMail(msg).then(()=>{
     res.status(200).json({success:true,message:"Kindly check your email for the OTP"});
   }).catch((error)=>{
-    res.status(200).json({success:false,message:error.message});
+    res.status(500).json({success:false,message:"Email could not be sent.Please retry"});
   })
   
 

@@ -5,7 +5,7 @@ const { Verify } = require("../middleware/auth");
 
 router.route("/signup").post(signup);
 router.route("/login").post(login);
-router.route("/").get(Verify, me);
+router.route("/me").get(Verify, me);
 router.route("/forgetpassword").post(changepassword);
 router.route('/recoveryOTP').post(requestOTPForPwChange);
 router.route('/OTPrequest').post(OTPVerify);
