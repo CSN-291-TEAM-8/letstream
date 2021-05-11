@@ -266,6 +266,6 @@ exports.me = async (req, res, next) => {
     .status(200)
     .json({
       success: true,
-      data: { avatar, username, fullname, email, _id, website, bio,hostel,institude_id },
+      data: { avatar, username, fullname, email, _id, website, bio},
     });
 };

@@ -144,7 +144,7 @@ const SignUp = () => {
     localStorage.setItem("accesstoken", data.token);
     connect("/auth/me").then((user)=>{
       localStorage.setItem("user",user.data);
-      window.location.reload();
+      window.location.replace("/");
     }).catch(err=>{
       setLoading(false);
       return toast.error(err.message);

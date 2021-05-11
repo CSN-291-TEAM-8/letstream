@@ -35,7 +35,7 @@ const SignIn = () => {
     });
     
     
-    const [submittedData,setSubmittedData] = useState();
+    //const [submittedData,setSubmittedData] = useState();
     const history = useHistory();
     const handleClick = () => history.push('/AccountRecovery');
     const [showPassword, setValues] = useState(false);
@@ -62,11 +62,12 @@ const SignIn = () => {
     }
 
     const onsubmit = (event) => {
+        event.preventDefault();
         if(loading){
             return;
         }
         setLoading(true);
-        event.preventDefault();
+        
         connect("/auth/login",{body:data}).then((d)=>{
             localStorage.setItem("accesstoken",d.token);
             connect("/auth/me").then((user)=>{

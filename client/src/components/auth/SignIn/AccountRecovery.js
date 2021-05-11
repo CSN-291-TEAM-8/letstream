@@ -70,8 +70,8 @@ const AccountRecovery = () => {
         if(loading){
             return;
         }
-        
-        if(!data.otp||data.password){
+        console.log(data);
+        if(!data.otp||!data.password){
             return toast.info("Please fill all fields");
         }
         setLoading(true);
@@ -84,7 +84,7 @@ const AccountRecovery = () => {
             console.log(data);
             localStorage.setItem('user', JSON.stringify(data.user));
             localStorage.setItem('accesstoken', data.token);
-            window.location.reload();            
+            window.location.replace("/");            
         }).catch(err => {
             setLoading(false);
             return toast.error(err.message);
@@ -161,7 +161,7 @@ const AccountRecovery = () => {
                                             </FormInput>
                                             <FormInput
                                                 type="number"
-                                                placeholder="Enter 6-digit OTP"
+                                                placeholder="Enter your email-OTP"
                                                 name="email"
                                                 min="100000"
                                                 max="999999"
