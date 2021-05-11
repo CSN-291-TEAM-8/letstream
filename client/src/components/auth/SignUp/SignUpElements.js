@@ -79,8 +79,9 @@ export const FormInput = styled(Input)`
 `;
 
 export const FormButton = styled.button`
-    background: #00b386;
-    padding: 16px 0;
+
+    background: #9999ff;
+    padding: 12px 0;
     border: none;
     border-radius: 4px;
     color: #fff;
