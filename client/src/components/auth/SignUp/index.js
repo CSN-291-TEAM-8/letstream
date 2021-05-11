@@ -221,7 +221,7 @@ const SignUp = () => {
                 <FormButton
                   type="button"
                   style={{
-                    background: "#9999ff",
+                    background: "#00b386",
                     padding: "16px 0",
                     border: "none",
                     borderRadius: "4px",

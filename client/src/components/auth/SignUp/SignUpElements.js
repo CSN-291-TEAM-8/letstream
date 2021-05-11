@@ -1,23 +1,16 @@
 import styled from 'styled-components'
-import img from '../../../assets/auth2.jpeg'
+import img from '../../../assets/auth4.jpeg'
 import Input from "@material-ui/core/Input";
 export const Container = styled.div`
-    height: 700px;
+    height: 810px;
     position: relative;
     bottom: 0;
     left: 0;
     right: 0;
     top: 0;
     z-index: 0;
-    overflow-y: scroll;
-    
-    background: linear-gradient(
-        100deg,
-        rgba(64, 98, 191, 1) 0%,
-        rgba(10, 201, 122, 1) 100%
-    );
-    
-
+    background-image: url(${img});
+    background-size : cover;
 
 `;
 
@@ -45,7 +38,6 @@ export const FormContent = styled.div`
 `;
 
 export const Form = styled.form`
-    ${'' /* background: #010101; */}
     
     background-image: url(${img});
     max-width: 400px;
@@ -65,7 +57,7 @@ export const Form = styled.form`
 
 export const FormH1 = styled.h1`
     margin-bottom: 40px;
-    color: #fff;
+    color: #e6fff9;
     font-size: 20px;
     font-weight: 400;
     text-align: center;
@@ -82,13 +74,12 @@ export const FormInput = styled(Input)`
     margin-bottom: 32px;
     border: none;
     border-radius: 4px;
-    background: #fff;
+    background: #e6fff9;
     height: 50px;
 `;
 
 export const FormButton = styled.button`
-    ${'' /* background: #01bf71; */}
-    background: #9999ff;
+    background: #00b386;
     padding: 16px 0;
     border: none;
     border-radius: 4px;
