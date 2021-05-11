@@ -135,7 +135,7 @@ const AccountRecovery = () => {
                                             disableUnderline={true}
                                         >
                                         </FormInput>
-                                        <FormButton type="button" onClick={onOTPrequest}>{!loading?"Request OTP":<CircularProgress size={23}/>}</FormButton>
+                                        <FormButton type="button" onClick={onOTPrequest}>{!loading?"Request OTP":<CircularProgress size={20}/>}</FormButton>
                                     </>
                                     }
                                     {isRequestOTPClicked &&

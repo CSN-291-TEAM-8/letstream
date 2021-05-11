@@ -26,7 +26,7 @@ const IntroSection = () => {
                 <VideoBg autoPlay loop muted src={Video} type='video/mp4'/>
             </HeroBg>
             <HeroContent>
-                <HeroH1>Online Meeting Made Easy</HeroH1>
+                <HeroH1>Online Streaming Made Easy</HeroH1>
                 <HeroP>
                     This is a place where you can start a live stream,
                     upload videos of your choice.

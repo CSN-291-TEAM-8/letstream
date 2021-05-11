@@ -222,7 +222,7 @@ const SignUp = () => {
                   type="button"
                   style={{
                     background: "#9999ff",
-                    padding: "16px 0",
+                    padding: "12px 0",
                     border: "none",
                     borderRadius: "4px",
                     color: "#fff",
@@ -231,11 +231,11 @@ const SignUp = () => {
                   }}
                   onClick={RequestOTPClicked}
                 >
-                  {!loading ? val : <CircularProgress size={23} />}
+                  {!loading ? val : <CircularProgress size={20} />}
                 </FormButton>
               }
               {isSingUpEnabled &&
-                <FormButton type='submit'>{!loading ? "Sign up" : <CircularProgress size={23} />}</FormButton>
+                <FormButton type='submit'>{!loading ? "Sign up" : <CircularProgress size={20} />}</FormButton>
               }
 
             </Form>
