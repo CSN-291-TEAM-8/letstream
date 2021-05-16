@@ -19,13 +19,22 @@
 }
 
 .videoinfo_likes > * {
-    padding-left: 0;
+    padding-left: 10px;
     padding-top: 0;
+    display:flex;
+}
+.videoinfo_item{
+    padding-right:20px;
 }
 
 .videoinfo_likes, .videoinfo_channel > div {
     display: flex;
     align-items: center;
+}
+.videoinfo_likes{
+    width:300px;
+    margin-right:120px;
+    justify-content: space-between;
 }
 
 hr {
@@ -37,7 +46,7 @@ hr {
 }
 
 .videoinfo_channelinfo {
-    padding-left: 5px;
+    padding-left: 15px;
 }
 
 .videoinfo_channeltitle {
@@ -49,4 +58,9 @@ hr {
     color: gray;
     font-size: small;
     margin: 0;
+}
+.videoinfo_channeldesc{
+    margin-left:50px;
+    padding-top:20px;
+   
 }

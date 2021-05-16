@@ -21,9 +21,12 @@ exports.Verify = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log(decoded);
-        const User = await Userdb.findById(decoded.id).select("-password");
-        //console.log('\nuser',User);
+        //console.log(decoded);
+        const User = await Userdb.findById(decoded.id).populate({
+            path:"subscribedto",
+            select:"username avatar"
+        }).select("-password");
+        ////console.log('\nuser',User);
         if (!User) {
             return next({ message: `No User found for ID ${decoded.id} and tempid ${decoded.tempid}`, logout: true });
         }

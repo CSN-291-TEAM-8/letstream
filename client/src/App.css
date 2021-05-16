@@ -2,5 +2,18 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Encode Sans Expanded', sans-serif;
+  font-family: 'Lora', serif,'Encode Sans Expanded', sans-serif;
+}
+.btn {
+  padding: 5px 10px;
+  background: red;
+  color:#fff;
+  text-transform: uppercase;
+  cursor:pointer;
+  width:150px;
+  display:flex;
+  justify-content:center;
+  height:35px;
+  display:flex;
+  align-items: center;
 }

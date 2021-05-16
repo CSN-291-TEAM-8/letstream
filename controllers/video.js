@@ -9,24 +9,27 @@ const Comment = require("../models/Comment");
 const transporter = require("../utils/nodemailer");
 const likedVideo = require("../models/likedVideo");
 const savedVideo = require("../models/savedVideo");
-const socket = SOCKET();
+
+//const socket = SOCKET();
 const io = IO();
 
-
-exports.checkAccessibility = async(req,video)=>{
-
-    const organiser = await User.findById(video.oraganiser);
-
-    return video.vis=="public"||video.oraganiser==req.user.id||video.presenters.indexOf(req.user.id)>-1||
-    (video.vis=="sub-only"&&organiser.subscribers.toString().indexOf(req.user.id.toString())>-1)
-    ||(video.vis=="custom"&&video.accessibility.indexOf(req.user.username)>-1)
+exports.checkAccessibility = (req,video) =>{
+    //console.log("video check",video);
+    const organiser = video.organiser;
+    ////console.log("organiser",organiser);
+    //video.presenters.toString().indexOf(req.user.id.toString())>-1||
+    return video.visibility=="public"||video.organiser._id.toString()==req.user.id.toString()||
+    (video.visibility=="sub-only"&&organiser.subscribers.toString().indexOf(req.user.id.toString())>-1)
+    ||(video.visibility=="custom"&&video.accessibility.indexOf(req.user.id.toString())>-1)
 }
+
+
 
 exports.getvideo = async(req,res,next) =>{
     const vid = await Video.findById(req.params.id)
     .populate({
-        path:"presenters",
-        select:"username"
+        path:"organiser",
+        select:"username avatar subscribers"
     })
     .lean()
     .exec();
@@ -42,7 +45,7 @@ exports.getvideo = async(req,res,next) =>{
     if(!this.checkAccessibility(req,vid)){
         return next({
             statusCode:401,
-            message:"You are not allowed to access this stream"
+            message:"You are not allowed to view this video"
         })
     }
     const range = req.headers.range; 
@@ -87,7 +90,7 @@ exports.getvideo = async(req,res,next) =>{
 exports.sendvideoinfo = async(req,res,next)=>{
     const v = await Video.findById(req.params.id).populate({
         path:"organiser",
-        select:"username avatar"
+        select:"username avatar subscribers"
     }).populate({
         path:"comments",
         select: "text createdAt",
@@ -100,11 +103,18 @@ exports.sendvideoinfo = async(req,res,next)=>{
     if(!v||!this.checkAccessibility(req,v)){
         return next({
             statusCode:400,
-            message:"The requested stream could not be fetched"
+            message:"Either link is broken or you are not allowed to view it"
         })
     }
-    v.isLiked = v.likedBy.includes(req.user.id);
-    const isSaved = await savedVideo.findOne({userid:req.user.id,Videoid:v._id});
+    
+    v.isMyVideo = v.organiser._id.toString()==req.user.id;
+    v.isLiked = v.likedBy.toString().includes(req.user.id);
+    v.isdisLiked = v.dislikedBy.toString().includes(req.user.id);
+    v.organiser.subscribersCount = v.organiser.subscribers.length;
+    v.organiser.isSubscribed = req.user.subscribedto.toString().includes(v.organiser._id.toString());
+
+    const user = await User.findById(req.user.id);
+    const isSaved = await savedVideo.findOne({userid:user._id,Videoid:v._id});
     if(isSaved){
         v.isSaved = true
     }
@@ -113,8 +123,9 @@ exports.sendvideoinfo = async(req,res,next)=>{
     }
     v.comments.forEach(function(c){
         c.isMine = req.user.id==c.user._id.toString();
-    })   
-    res.status(200).json({success:true,data:v});
+    })
+    console.log("video",v);   
+    res.status(200).json({success:true,video:v});
 
 }
 exports.deletevideo = async(req,res,next)=>{
@@ -132,13 +143,26 @@ exports.deletevideo = async(req,res,next)=>{
 }
 
 exports.Highlight = async(req,res,next) =>{
-   const highlighedvideos =  await Video.find({}).sort((v)=>v.likesCount-v.dislikesCount);
+   const highlightedvideos =  await Video.find({}).populate({
+       path:"organiser",
+       select:"username subscribers"
+   }).sort({likesCount:-1}).sort({dislikesCount:1});
+
+   const checkAccessibility = function(req,video){
+    ////console.log("check video",video);
+    const organiser = video.organiser;
+    //console.log(organiser);
+    return video.visibility=="public"||video.organiser._id.toString()==req.user.id.toString()||video.presenters.indexOf(req.user.id)>-1||
+    (video.visibility=="sub-only"&&organiser.subscribers.toString().indexOf(req.user.id.toString())>-1)
+    ||(video.visibility=="custom"&&video.accessibility.indexOf(req.user.id.toString())>-1)
+}
    //select accessible videos
-   const accessibleones = highlightedvideos.filter(function(v){
-    return this.checkAccessibility(req,v);
-   })
+   let accessibleones = highlightedvideos.filter(function(v){
+    return checkAccessibility(req,v);
+   });
+   accessibleones.forEach(function(v){v.isLiked = v.likedBy.toString().includes(req.user.id),v.isdisLiked = v.dislikedBy.toString().includes(req.user.id),v.likedBy=[],v.dislikedBy = [],v.organiser.subscribers=[]})
      
-   res.status(200).json({success:true,accessibleones});
+   res.status(200).json({success:true,videos:accessibleones});
 
    }
 
@@ -161,7 +185,7 @@ exports.toggleLike = async(req,res,next) =>{
         v.likesCount = v.likesCount - 1;
         v.likedBy.splice(v.likedBy.indexOf(req.user.id),1);
         await likedVideo.findOneAndDelete({userid:req.user.id,Videoid:v._id},(err,res)=>{
-            console.log(err,"\n err on line 145 of controllers/video")
+            //console.log(err,"\n err on line 145 of controllers/video")
         });
     }
     else{
@@ -203,7 +227,7 @@ exports.toggledislike = async(req,res,next) =>{
         v.likedBy.splice(v.likedBy.indexOf(req.user.id),1);
         v.likesCount = v.likesCount - 1;
         await likedVideo.findOneAndDelete({userid:req.user.id,Videoid:v._id},(err,res)=>{
-            console.log(err,"\n err on line 187 of controllers/video")
+            //console.log(err,"\n err on line 187 of controllers/video")
         });
     }
     await v.save();
@@ -256,7 +280,7 @@ exports.deleteComment = async(req,res,next)=>{
          statusCode:404,
          message:"Video not found"
      })
-    if(!this.accessibility(req,video)){
+    if(!this.checkAccessibility(req,video)){
         return next({
             statusCode:401,
             message:"Unauthorised access"
@@ -270,7 +294,9 @@ exports.deleteComment = async(req,res,next)=>{
         })
     }
     await comment.remove();
-    await Notification.deleteMany({commentId:comment._id},(err,res)=>{console.log("Generated on line 245 ,controllers/video\n"+err)});
+    await Notification.deleteMany({commentId:comment._id},(err,res)=>{
+        //console.log("Generated on line 245 ,controllers/video\n"+err)
+    });
     video.comments.splice(video.comments.indexOf(comment._id),1);
     await video.save();
     res.status(200).json({success:true});
@@ -278,7 +304,7 @@ exports.deleteComment = async(req,res,next)=>{
 }
 exports.reportVideo = async(req,res,next)=>{
     const video = await Video.findById(req.params.id);
-    if(!video||!this.checkAccessibility(req,video)||video.oraganiser==req.user.id){
+    if(!video||!this.checkAccessibility(req,video)||video.organiser==req.user.id){
         return next({
             statusCode:400,
             message:"Action failed"
@@ -301,7 +327,7 @@ exports.reportVideo = async(req,res,next)=>{
         to:process.env.ADMIN_EMAIL,
         from:process.env.EMAIL,
         subject:`Report against the video "${video.title}"`,
-        text:"Hello admin,\nUsers of letstream are reporting the video stream Videoed by "+video.oraganiser.fullname+"\nKindly,take the suitable action against it.URL of the video is \n\n"+video.url+"\nTotal reports filled have reached "+video.reportCount+"\n\nHappy Streaming",
+        text:"Hello admin,\nUsers of letstream are reporting the video stream Videoed by "+video.organiser.fullname+"\nKindly,take the suitable action against it.URL of the video is \n\n"+video.url+"\nTotal reports filled have reached "+video.reportCount+"\n\nHappy Streaming",
         
       }; 
       const admin = await User.find({isAdmin:true});
@@ -311,7 +337,7 @@ exports.reportVideo = async(req,res,next)=>{
       }
       if(admin){
           await Notification.create({
-              Message:"Hello admin,\nUsers of letstream are reporting the video stream Videoed by "+video.oraganiser.fullname+"\nKindly,take the suitable action against it.\nTotal reports filled have reached "+video.reportCount,
+              Message:"Hello admin,\nUsers of letstream are reporting the video stream Videoed by "+video.organiser.fullname+"\nKindly,take the suitable action against it.\nTotal reports filled have reached "+video.reportCount,
               sender:"system",
               receiver:adminid,
               url:video.url,
@@ -328,20 +354,21 @@ exports.reportVideo = async(req,res,next)=>{
 }
 
 exports.searchVideo = async(req,res,next)=>{
-    if (!req.query.title) {
+    if (!req.body.term) {
         return ;
       }
     
       let Videos = [];
     
-      if (req.query.title) {
-        const regex = new RegExp(req.query.title, "i");
-        Videos = await Video.find({ title: regex }).populate({path:"organiser",select:"username"});
-        Videos2 = await Video.find({keywords:{$in:[regex]}}).populate({path:"organiser",select:"username"});
-        Videos = Videos2.concat(videos).unique();
+      if (req.body.term) {
+        const regex = new RegExp(req.body.term, "i");
+        Videos = await Video.find({$or: [{ title: regex },{keywords:{$in:[regex]}},{description:regex}]}).populate({path:"organiser",select:"username subscribers"}).sort("-createdAt");
+        
       }
-      Videos = Videos.filter((Video) => { return this.checkAccessibility(req,Video)})
-      res.status(200).json({ success: true, data: Videos});
+    //   //console.log(Videos);
+      Videos = Videos.filter((V,pos)=>{ return this.checkAccessibility(req,V)});
+      Videos.forEach(v=>{v.isLiked = v.likedBy.toString().includes(req.user.id),v.isdisLiked = v.dislikedBy.toString().includes(req.user.id),v.likedBy=[],v.dislikedBy = [],v.organiser.subscribers = []})
+      res.status(200).json({ success: true, videos:Videos});
 }
 
 exports.likecomment = async(req,res,next)=>{

@@ -171,7 +171,11 @@ exports.changepassword = async(req,res,next)=>{
     const ifotp = await OTPmodel.findOne({email,OTP,type:"changepassword",expires:{$gt:Date.now()}});
     const shoulddelete = await OTPmodel.findOne({email,OTP,type:"changepassword",expires:{$lt:Date.now()}});
     if(ifotp){
-     const user =  await User.findOne({email}).select("-password");
+     const user =  await User.findOne({email}).populate({
+       path:"subscribedto",
+       select:"username avatar"
+     }).select("-password");
+     
      if(!user){
        return next({
          statusCode:404,
@@ -185,7 +189,7 @@ exports.changepassword = async(req,res,next)=>{
     setTimeout(async function(){
     const token = await user.getJwtToken();
     req.user = user;
-    res.status(200).json({ success: true,token: token,user:user });
+    res.status(200).json({ success: true,subscribedto:req.user.subscribedto,token: token,user:user });
   },500)
     }
     else{
@@ -267,5 +271,6 @@ exports.me = async (req, res, next) => {
     .json({
       success: true,
       data: { avatar, username, fullname, email, _id, website, bio},
+      subscribedto:req.user.subscribedto,
     });
 };

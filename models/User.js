@@ -47,6 +47,9 @@ const userSchema = new Schema({
       default:
         "https://kkleap.github.io/assets/default.jpg",      
     },
+    cover:{
+      type:String,
+    },
     bio: String,
     website: String,
     subscribers: [{ type: mongoose.Schema.ObjectId, ref: "User" }],    

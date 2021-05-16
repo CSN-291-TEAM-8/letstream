@@ -2,11 +2,18 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
+import SubscriberProvider from './utils/SubscriberContext';
+import { ThemeProvider } from './utils/ThemeContext';
+
 //import reportWebVitals from './reportWebVitals';
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <SubscriberProvider>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </SubscriberProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );

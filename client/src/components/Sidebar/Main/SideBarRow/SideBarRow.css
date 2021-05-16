@@ -1,31 +1,33 @@
 .sidebarrow {
     display: flex;
     align-items: center;
-    padding: 10px 20px;
+    padding: 10px;
+    padding-left:20px;
 }
 
-.sidebarrow_icon {
-    color: #606060;
+.sidebarrow__icon {
+    fill: #606060;
     font-size: large !important;
 }
 
-.sidebarrow_title {
+.sidebarrow__title {
     flex: 1;
-    margin-left: 20px;
-    font-size: 12px;
+    margin-left: 5px;
+    font-size: 16px;
     font-weight: 500;
+    padding-left:10px;
 }
 
 .sidebarrow:hover {
-    background-color: lightgray;
+    background-color: rgb(221, 214, 214);
     cursor: pointer
 }
 
-.sidebarrow:hover >.sidebarrow_icon {
-    color: red
+.sidebarrow:hover >.sidebarrow__icon {
+    fill: red
 }
 
-.sidebarrow:hover >.sidebarrow_title {
+.sidebarrow:hover >.sidebarrow__title {
     font-weight: bold;
 }
 
@@ -33,10 +35,10 @@
     background-color: lightgray;
 }
 
-.sidebarrow.selected >.sidebarrow_icon {
-    color: red
+.sidebarrow.selected >.sidebarrow__icon {
+    fill: red
 }
 
-.sidebarrow.selected >.sidebarrow_title {
+.sidebarrow.selected >.sidebarrow__title {
     font-weight: bold;
 }

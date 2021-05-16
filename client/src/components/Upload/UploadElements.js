@@ -1,14 +1,20 @@
 import styled from 'styled-components'
 
 export const Container = styled.div`
-    height: 770px;
+    height: auto;
+    width:100%;   
     position: relative;
     bottom: 0;
     left: 0;
     right: 0;
     top: 0;
     z-index: 0;
-    background: #e6faff;
+    
+    video{
+        width:100%;
+        height:300px;
+        object-fit:cover;
+    }
     
 `;
 
@@ -37,7 +43,7 @@ export const FormContent = styled.div`
 
 export const Form = styled.form`
     
-    background: #ccf5ff;
+    
     max-width: 400px;
     height: auto;
     width: 100%;
@@ -46,8 +52,7 @@ export const Form = styled.form`
     margin: 0 auto;
     padding: 80px 32px;
     border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-
+    
     @media screen and(max-width: 400px){
         padding: 32px 32px;
     }
@@ -55,7 +60,7 @@ export const Form = styled.form`
 
 export const FormH1 = styled.h1`
     margin-bottom: 40px;
-    color: #000;
+    
     font-size: 20px;
     font-weight: 400;
     text-align: center;
@@ -65,22 +70,33 @@ export const FormH1 = styled.h1`
 export const FormInput = styled.textarea`
     padding: 16px 16px;
     margin-bottom: 32px;
-    border: ridge;
-    border-width: 2px;
+    border: 1px solid #595959;
+    
     border-radius: 4px;
-    background: #fff;
-    height: 40px;
+    
+    height: 55px;
     font-size: 18px;
+    
+`;
+
+export const FormSearchInput = styled.input`
+    padding: 16px 16px;
+    margin-bottom: 32px;
+    border: 1px solid #595959; 
+    border-radius: 4px;
+    font-size: 16px;
+    height: 53px;
 `;
 
 export const InputLabel = styled.label`
     margin-bottom: 18px;
     font-size: 18px;
-    color: #000;
+    
     border: 1px solid #595959;
     border-radius: 4px;
     display: flex;
-    width: 148px;
+    align-items:center;
+    width: 100%;
     padding: 6px 12px;
     cursor: pointer;
 `;
@@ -100,10 +116,10 @@ export const FormButton = styled.button`
 export const TextArea = styled.textarea`
     padding: 16px 16px;
     margin-bottom: 32px;
-    border: ridge;
-    border-width: 2px; 
+    border: 1px solid #595959;
+     
     border-radius: 4px;
-    background: #fff;
+    
     font-size: 18px;
     height: 100px;
 `;
@@ -115,7 +131,7 @@ export const UploadInput = styled.input`
 export const FormLabel = styled.label`
     margin-bottom: 12px;
     font-size: 18px;
-    color: #000;
+    
 `;
 
 

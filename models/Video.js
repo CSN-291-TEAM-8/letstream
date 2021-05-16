@@ -18,17 +18,23 @@ const VideoSchema = new Schema({
     },
     servername:{
         type:String,
-        required:true
+       
     },    
     presenters:[{
         type:mongoose.Schema.ObjectId,
         ref:"User",
     }],
-       
+    views:{
+        type:Number,
+        default:0
+    },
+       viewedby:[{
+            type:mongoose.Schema.ObjectId
+       }],
       visibility:{
           type:String //either public,custom or sub-only
       },
-      accesibility:[{type:String}],
+      accessibility:[{type:String}],
     organiser:{
         type:mongoose.Schema.ObjectId,
         ref:"User",
@@ -51,10 +57,10 @@ const VideoSchema = new Schema({
     dislikedBy: [{
         type: mongoose.Schema.ObjectId,        
       }],
-      comments:{
+    comments:[{
         type: mongoose.Schema.ObjectId,
         ref:"Comment"
-      },
+      }],
       reportCount:{
           type:Number,
           default:0

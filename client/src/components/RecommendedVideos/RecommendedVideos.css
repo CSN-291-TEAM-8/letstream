@@ -2,9 +2,18 @@
     flex: 0.8;
     background-color: #f9f9f9;
     padding: 40px 20px;
+    margin-top:30px;
     padding-bottom: 0;
+    padding-bottom:50px;
+    width:calc(100% - 300px);
+    float:right;
+    
 }
-
+.sidebar{
+    width:300px;
+    float:left;
+    margin-top:60px;
+}
 .recommendedVideos > h2 {
     margin-left: 5px;
     margin-bottom: 20px;
@@ -14,7 +23,15 @@
     display: flex;
     flex-wrap: wrap;
 }
-
+.circular_loading{
+        width: 40px;
+        height: 40px;
+        margin: auto;
+        position: absolute;
+        top: 50%;
+        right: 40%;
+    
+}
 .recommendedvideos_videos > * {
     margin-left: 5%;
 }

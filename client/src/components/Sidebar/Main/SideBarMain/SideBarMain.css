@@ -1,5 +1,8 @@
 .sidebar {
-    flex: 0.2
+    flex: 0.2;
+    position:fixed;
+    height:90vh;
+    overflow-y:auto;
 }
 
 .sidebar > hr {
@@ -8,4 +11,10 @@
     background-color: lightgray;
     margin-top: 10px;
     margin-bottom: 10px;
+}
+.h3-sidebar{    
+    color: #aaa;
+    font-weight: bold;
+    font-size: 17px;
+    padding: 10px 20px;    
 }

@@ -17,10 +17,11 @@ const {
 } = require("../controllers/video");
 const { Verify } = require("../middleware/auth");
 
-router.route("/search/:title").get(Verify,searchVideo);
-router.route("/highlight").get(Verify,Highlight);
+router.route("/search").post(Verify,searchVideo);
+router.route("/trending").post(Verify,Highlight);
+
 router.route("/:id").get(Verify, getvideo).delete(Verify, deletevideo);
-router.route("/getinfo/:id").post(Verify,sendvideoinfo);
+router.route("/getinfo/:id").get(Verify,sendvideoinfo);
 router.route("/:id/togglelike").get(Verify, toggleLike);
 router.route("/:id/toggledislike").get(Verify, toggledislike);
 router.route("/:id/comments").post(Verify, addComment);

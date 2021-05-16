@@ -20,8 +20,9 @@ import {
     Text,
     Icon
 } from './SignInElements'
-import { connect } from '../../../utils';
+import { Connect } from '../../../utils';
 import { toast } from 'react-toastify';
+import { SubscriberContext } from '../../../utils/SubscriberContext';
 
 
 const AccountRecovery = () => {
@@ -42,7 +43,7 @@ const AccountRecovery = () => {
     const [isRequestOTPClicked, hideEmail] = useState(false);
     //const [submittedData, setSubmittedData] = useState();
     const [showPassword, setValues] = useState(false);
-
+    const {setsubscriber} = React.useContext(SubscriberContext);
 
     const handleClickShowPassword = () => {
         setValues(!showPassword);
@@ -80,8 +81,12 @@ const AccountRecovery = () => {
             password: data.password,
             OTP: parseInt(data.otp)
         }
-        connect('/auth/forgetpassword', { body }).then((data) => {
+        Connect('/auth/forgetpassword', { body }).then((data) => {
             console.log(data);
+            if(data.subscribedto){
+                localStorage.setItem("subscription",JSON.stringify(data.subscribedto));
+                setsubscriber(data.subscribedto);
+            }
             localStorage.setItem('user', JSON.stringify(data.user));
             localStorage.setItem('accesstoken', data.token);
             window.location.replace("/");            
@@ -104,7 +109,7 @@ const AccountRecovery = () => {
             return toast.info("IITR email id is required");
         }
         setLoading(true);
-        connect("/auth/recoveryOTP",{body:{email:data.email}}).then(()=>{
+        Connect("/auth/recoveryOTP",{body:{email:data.email}}).then(()=>{
             setLoading(false);
             hideEmail(true);
             return toast.success("Enter the otp you just received on your email");
@@ -161,8 +166,7 @@ const AccountRecovery = () => {
                                             </FormInput>
                                             <FormInput
                                                 type="number"
-                                                placeholder="Enter your email-OTP"
-                                                name="email"
+                                                placeholder="Enter your email-OTP"                                           
                                                 min="100000"
                                                 max="999999"
                                                 name="otp"

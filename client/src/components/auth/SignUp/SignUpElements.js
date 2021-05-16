@@ -74,7 +74,7 @@ export const FormInput = styled(Input)`
     margin-bottom: 32px;
     border: none;
     border-radius: 4px;
-    background: #e6fff9;
+    background: #e6fff9 !important;
     height: 50px;
 `;
 

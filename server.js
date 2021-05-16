@@ -10,6 +10,7 @@ const user = require("./routes/user");
 const chat = require("./routes/chat");
 const errorHandler = require("./middleware/errorhandle");
 const DB = require("./utils/db.config");
+const User = require("./models/User");
 
 const app = express();
 
@@ -32,12 +33,19 @@ app.use(function (req, res, next) {
   });
 DB();
 startSocket();
-
+const clearSubs = async ()=>{
+ const users =  await User.find({});
+ for(x of users){
+   x.subscribedto = [];
+   x.subscribers = [];
+   await x.save();
+ }
+}
 app.use("/auth", auth);
 app.use("/admin", admin);
 app.use("/chat",chat);
-app.use("/videos", video);
-app.use("/users", user);
+app.use("/video", video);
+app.use("/user", user);
 
 app.use(errorHandler);
 

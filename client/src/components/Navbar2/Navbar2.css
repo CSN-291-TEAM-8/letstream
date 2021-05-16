@@ -3,9 +3,11 @@
     align-items: center;
     justify-content: space-between;
     padding: 10px;
-    position: sticky;
+    position: fixed;
+    width:100%;
     top: 0;
     z-index: 100;
+    border-bottom:1px solid #d2d1d1;
     background-color: white;
 }
 
@@ -25,7 +27,9 @@
 .header_searchbutton {
     width: 50px !important;
     border-color: #fafafa;
+    height:30px !important;
     border-left: 1px solid lightgray;
+    margin-bottom:-10px;
     color: gray;
     cursor: pointer;
 }
@@ -36,9 +40,17 @@
 }
 
 .header_icon {
-    margin-right: 12px;
+    margin-right: 22px;
+    font-size:1.67em;
+}
+.sp{
+    position:relative;
+    top:-1px;
 }
 
 .header_center > input {
     flex: 1;
+    padding:8px !important;
+    padding-left:15px !important;
+
 }

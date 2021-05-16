@@ -4,7 +4,7 @@ import IconButton from "@material-ui/core/IconButton";
 import Visibility from "@material-ui/icons/Visibility";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import VisibilityOff from "@material-ui/icons/VisibilityOff";
-import {connect} from "../../../utils";
+import {Connect} from "../../../utils";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
 
@@ -19,6 +19,7 @@ import {
     FormWrap 
 } from './SignInElements'
 import { toast } from 'react-toastify';
+import { SubscriberContext } from '../../../utils/SubscriberContext';
 
 export const logout = ()=>{
     localStorage.clear();
@@ -36,6 +37,7 @@ const SignIn = () => {
     
     
     //const [submittedData,setSubmittedData] = useState();
+    const {setsubscriber} = React.useContext(SubscriberContext);
     const history = useHistory();
     const handleClick = () => history.push('/AccountRecovery');
     const [showPassword, setValues] = useState(false);
@@ -68,9 +70,13 @@ const SignIn = () => {
         }
         setLoading(true);
         
-        connect("/auth/login",{body:data}).then((d)=>{
+        Connect("/auth/login",{body:data}).then((d)=>{
             localStorage.setItem("accesstoken",d.token);
-            connect("/auth/me").then((user)=>{
+            Connect("/auth/me").then((user)=>{
+                if(user.subscribedto){
+                    localStorage.setItem("subscription",JSON.stringify(user.subscribedto));
+                    setsubscriber(user.subscribedto);
+                }
                 localStorage.setItem("user",JSON.stringify(user.data));
                 window.location.replace(location.next.pathname); 
             }).catch(err=>{

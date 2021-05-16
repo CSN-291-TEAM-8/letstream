@@ -3,6 +3,7 @@
 import { toast } from "react-toastify";
 import axios from "axios";
 
+
 export const timeSince = (timestamp, short) => {
 
 
@@ -46,9 +47,10 @@ export const timeSince = (timestamp, short) => {
     return Math.floor(seconds) > 5 ? Math.floor(seconds) + " seconds" : "few seconds";//else finally second
 };
 //make request to server for fetching data
-export const connect = (endpoint, { body, ...customConfig } = {}) => {
+export const Connect = (endpoint, { body, ...customConfig } = {}) => {
     const token = localStorage.getItem("accesstoken");
     const headers = { "Content-Type": "application/json" };
+    
 
     if (token) {
         headers.Authorization = `Bearer ${token}`;
@@ -72,7 +74,8 @@ export const connect = (endpoint, { body, ...customConfig } = {}) => {
             const data = await res.json();
 
             if (res.ok) {
-                // console.log(data);
+                
+                console.log(data);
                 if (data.unseennotice && data.unseennotice > 0) {
                     if (document.getElementById('noti-count')) {
                         document.getElementById('noti-count').textContent = data.unseennotice;
@@ -121,39 +124,58 @@ export const connect = (endpoint, { body, ...customConfig } = {}) => {
     )
 };
 
-export const uploadImage = ({ username }, file) => {
+export const uploadImage = async ({ username }, file) => {
 
-    if (username == "Guestiitr") {
+    if (username === "Guestiitr") {
         return Promise.reject({ message: "You are not allowed to modify the detail" });
     }
-    const data = new FormData();
-    console.log("Compressed size--->", file.size, "bytes");
-    data.append("file", file);
-    data.append("upload_preset", "letstreamiitr");//may be profile image
 
+    const fdata = new FormData();
+    console.log("size--->", file.size, "bytes");
+    fdata.append("file", file);
+    fdata.append("upload_preset", "letstreamiitrmedia");//may be profile image
+    let toastIdav = null;
 
-    return fetch(process.env.REACT_APP_UPLOAD_URL, {
-        method: "POST",
-        body: data,
-    }).then((res) => res.json());
+    const config = {
+        onUploadProgress: (p) => {
+            const progress = p.loaded / p.total;
+            if (toastIdav === null) {
+                toastIdav = toast("Uploading...", {
+                    progress,
+                });
+            } else {
+                toast.update(toastIdav, {
+                    progress,
+                });
+            }
+        },
+    };
+
+    const {data} = await axios.post(//
+        `${process.env.REACT_APP_UPLOAD_MEDIA_URI}/image/upload`,
+        fdata,
+        config
+    );
+
+    toast.dismiss(toastIdav);
+    console.log(data);
+    return data.secure_url;
 };
 
 export const uploadMediaFile = async (filetype, file) => {
 
-    if(filetype!="video"){
-        return toast.error("Only video can be uploaded");
-    }
-    const data = new FormData();
+    
+    const fdata = new FormData();
     console.log("size--->", file.size, "bytes");
-    data.append("file", file);
-    data.append("upload_preset", "letstreamiitrchat");
+    fdata.append("file", file);
+    fdata.append("upload_preset", "letstreamiitrmedia");
     let toastId = null;
 
     const config = {
         onUploadProgress: (p) => {
             const progress = p.loaded / p.total;
             if (toastId === null) {
-                toastId = toast("Upload in Progress", {
+                toastId = toast("Uploading...", {
                     progress,
                 });
             } else {
@@ -164,15 +186,15 @@ export const uploadMediaFile = async (filetype, file) => {
         },
     };
 
-    const da = await axios.post(
+    const {data} = await axios.post(//
         `${process.env.REACT_APP_UPLOAD_MEDIA_URI}/${filetype}/upload`,
-        data,
+        fdata,
         config
     );
 
     toast.dismiss(toastId);
-
-    return da;//use da.data.secure_url
+    console.log(data);
+    return data.secure_url;//use da.data.secure_url
     // return fetch("https://api.cloudinary.com/v1_1/dv9k3us3f/" + filetype + "/upload", {
     //     method: "POST",
     //     body: data,
@@ -201,7 +223,7 @@ export const uploadChatFile = async (filetype, file) => {
         },
     };
 
-    const d = await axios.post(
+    const d =  axios.post(
         `${process.env.REACT_APP_UPLOAD_CHAT_URI}/${filetype}/upload`,
         data,
         config
@@ -209,9 +231,10 @@ export const uploadChatFile = async (filetype, file) => {
 
     toast.dismiss(toastId);
 
-    return true;
+    return d;
     // return fetch("https://api.cloudinary.com/v1_1/dv9k3us3f/" + filetype + "/upload", {
     //     method: "POST",
     //     body: data,
     // }).then((res) => res.json());
 };
+export default Connect;

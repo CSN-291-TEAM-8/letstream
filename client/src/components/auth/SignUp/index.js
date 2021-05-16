@@ -14,7 +14,8 @@ import {
   FormInput,
   FormWrap
 } from './SignUpElements'
-import { connect } from '../../../utils';
+import { Connect } from '../../../utils';
+
 
 const SignUp = () => {
 
@@ -27,6 +28,7 @@ const SignUp = () => {
   });
   //{!loading?"Request OTP":<CircularProgress size={24}/>}
 
+  
   const [loading, setLoading] = useState(false);
   const [isSingUpEnabled, enableSignUpBtn] = useState(false);
   const [isOTPEntry, showOTPInput] = useState(false);
@@ -57,7 +59,7 @@ const SignUp = () => {
 
     setLoading(true);
 
-    connect("/auth/OTPrequest", { body: { email: data.email } }).then(() => {
+    Connect("/auth/OTPrequest", { body: { email: data.email } }).then(() => {
       showOTPInput(true);
       setDisabled(false);
       setLoading(false);
@@ -140,10 +142,11 @@ const SignUp = () => {
   };
   console.log(body);
   setLoading(true);
-  connect("/auth/signup",{body}).then((data)=>{
+  Connect("/auth/signup",{body}).then((data)=>{
     localStorage.setItem("accesstoken", data.token);
-    connect("/auth/me").then((user)=>{
-      localStorage.setItem("user",user.data);
+    Connect("/auth/me").then((user)=>{
+      
+      localStorage.setItem("user",JSON.stringify(user.data));
       window.location.replace("/");
     }).catch(err=>{
       setLoading(false);
