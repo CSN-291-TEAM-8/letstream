@@ -199,6 +199,7 @@ const EditProfile = ({isAdmin,isMe,_id}) => {
       setLoad(false);
       toast.success("Password changed successfully")
     }).catch(err=>{
+      setLoad(false);
       toast.error(err.message);
     })
   }
