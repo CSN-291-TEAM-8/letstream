@@ -80,6 +80,7 @@ const userSchema = new Schema({
     this.model("Notification").deleteMany({sender:this._id},(err,res)=>{next(err)});
     this.model("likedVideo").deleteMany({userid:this._id},(err,res)=>{next(err)});
     this.model("savedVideo").deleteMany({userid:this._id},(err,res)=>{next(err)});
+    this.model("LiveVideo").deleteMany({organiser:this._id},(err,res)=>{next(err)});
 });
   module.exports = mongoose.model("User", userSchema);
   

@@ -145,7 +145,7 @@ exports.getLiveVideos = async (req, res, next) => {
   lives.forEach(function(t){
     t.url = t.organiser.cover;
   });
-  res.status(200).json({success:true,lives});
+  res.status(200).json({unseennotice:req.user.unseennotice.length,success:true,lives});
 }
 
 exports.getUser = async (req, res, next) => {
@@ -639,6 +639,7 @@ exports.createLiveStream = async(req,res,next)=>{
     //...only organiser can join with different devices
   }
   const roomid = generateOTP(12);//generating roomid of length 12
+
   await LiveVideo.create({
     title,
     description,
@@ -647,6 +648,26 @@ exports.createLiveStream = async(req,res,next)=>{
     accessibility,
     organiser:organiser._id
   });
+
+  const notice = await Notification.create({
+    sender: req.user.username,
+    receiver: visibility == "custom" ? accessibility : req.user.subscribers,
+    Message: visibility == "custom" ? `${req.user.fullname}(channel-${req.user.username}) has invited you to attend a live session` : `Your channel ${req.user.username} hosted a live session`,
+    type: "livesession",    
+    url: "/livestreaming/" + roomid,
+    avatar: req.user.avatar
+  })
+
+  for (const i of notice.receiver) {
+    console.log("noti receiver",notice.receiver);
+    User.findByIdAndUpdate(i, {
+      $push: { unseennotice: notice._id }
+    })
+  }
+  if (notice.receiver.length == 0) {
+    notice.remove();
+  }
+  
   
   res.status(200).json({success:true,url:"/livestreaming/"+roomid})
 
@@ -661,7 +682,7 @@ exports.getLiveInfo = async(req,res,next)=>{
   if(!live){
     return next({
       statusCode:400,
-      message:"Invalid link"
+      message:"Either it is invalid link or event has been ended by organiser"
     })
   }
   if(!checkAccessibility(req,live)){

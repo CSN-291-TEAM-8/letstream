@@ -4,7 +4,7 @@ import { useParams } from "react-router";
 import { toast } from "react-toastify";
 import NoResults from "../components/Noresults";
 import Connect from "../utils";
-import { CircularProgress } from "@material-ui/core";
+import { Avatar, CircularProgress } from "@material-ui/core";
 import ScreenShareIcon from '@material-ui/icons/ScreenShareOutlined';
 import StopScreenShareIcon from '@material-ui/icons/StopScreenShareOutlined';
 import VideocamIcon from '@material-ui/icons/Videocam';
@@ -23,6 +23,7 @@ const Broadcastroomwrapper = styled.div`
     color:white;
     right:0;
     left:0;
+    background:black !important;
     z-index:300;
     background:${(props) => props.theme.bg};
     .loader{
@@ -113,6 +114,62 @@ const Broadcastroomwrapper = styled.div`
 
 `;
 
+const MsgWrapper = styled.div`
+    position:fixed;
+    width:300px;
+    height:100%;
+    top:0;
+    right:0;
+    background:#2f3b4a;
+    .chat_header{
+        display: flex;
+        padding: 15px;
+        text-align: center;
+        justify-content: center;
+        box-shadow: 2px 2px 10px #6c6c6c;
+        background: #353131;
+    }
+    .chat_container{
+        position:relative;
+        top:15px;
+        height:calc(100% - 130px);
+        overflow-y:auto;
+    }
+    .footer_chat {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+    }
+    input{
+        width:100%;   
+        color:white;     
+        background: #2f3b4a !important;
+        border: 1px solid grey;
+        border-radius: 16px;
+        padding-top: 10px;
+        padding-bottom: 10px;        
+    }
+    .chatcomponent {
+        width: 100%;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+    }
+    .avatar{
+        padding-right:20px;
+    }
+    .username{
+        font-weight:bold;
+        color:gray;
+        padding-right:10px;
+    }
+    p{
+        word-break:break-all;
+    }
+`;
+
+
+
 const Broadcastroom = () => {
     const { roomid } = useParams();
     const [liveinfo, setLiveinfo] = useState({ title: "", description: "" });
@@ -122,7 +179,57 @@ const Broadcastroom = () => {
     const [isVideoon, setVideoon] = useState(true);
     const [isMicon, setMicon] = useState(true);
     const [isScreensharing, setScreensharing] = useState(false);
-    //configuration for webrtc ice servers
+    const [mymsg, setMyMsg] = useState("");
+
+
+    //section 
+    
+
+    const ChatComponent = ({ chat }) => {
+        return (
+            <div className="chatcomponent">
+                <div className="avatar">
+                    <Avatar
+                        src={chat.avatar}
+                    />
+                </div>
+                <p>
+                    <span className="username">
+                        {chat.username}
+                    </span>
+                    {chat.text}
+                </p>
+            </div>
+        )
+    }
+    
+
+    const InfoSection = ({ joinLiveEvent }) => {
+        return (<div className="broadcast_detail">
+            <h1>Online live broadcasting</h1>
+
+            <h3 style={{ color: "blue", fontWeight: "bold" }} title={liveinfo?.title}>{liveinfo.title.length > 30 ? liveinfo.title.substring(0, 30) + "..." : liveinfo.title}</h3>
+
+            <div>
+                <span className="bold">Organiser: </span>
+                {liveinfo.organiser}
+            </div>
+            <div title={liveinfo?.description}>
+                <span className="bold">Description: </span>
+                {liveinfo.description.length > 50 ? liveinfo.description.substring(0, 50) + "..." : liveinfo.description}
+            </div>
+            <div>
+                <span className="bold">Total participants: </span>
+                {liveinfo.total}
+            </div>
+            <div className="joinbtnround" onClick={joinLiveEvent}>
+                Join Now
+                    </div>
+        </div>
+        );
+    }
+
+    //constraints
 
 
     const normalConstraints = {
@@ -131,6 +238,9 @@ const Broadcastroom = () => {
         },
         audio: true
     }
+
+    //configuration for webrtc ice servers
+
     const configuration = {
         iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
@@ -138,10 +248,11 @@ const Broadcastroom = () => {
             { urls: "turn:numb.viagenie.ca", credential: "1234567890", username: "leapkk58@gmail.com" },
         ],
     };
+
     const { Socket, setSocket } = React.useContext(SocketContext);
     const [disconnected, setDisconnected] = useState(false);
     const [chats, setChats] = useState([]);
-    const [meetended,setMeetingended] = useState(false);
+    const [meetended, setMeetingended] = useState(false);
 
     const makeSocketConnection = () => {
         const token = localStorage.getItem("accesstoken");
@@ -180,6 +291,15 @@ const Broadcastroom = () => {
         }
 
     };
+
+    const submitMsg = (e) => {
+        if (e.keyCode === 13) {
+            setMyMsg("");
+            console.log("emitting chat...");
+            Socket.emit("chat", mymsg);
+        }
+    }
+
     useEffect(() => {
         makeSocketConnection();
         Connect("/user/getstreaminfo/" + roomid).then((d) => {
@@ -266,16 +386,16 @@ const Broadcastroom = () => {
             peerConnection.ontrack = ev => {
                 console.log("Track event called for watcher");
             }
-            peerConnection.oniceconnectionstatechange = async function() {
-                if(peerConnection.iceConnectionState==="disconnected"||peerConnection.iceConnectionState==="failed")
-                await peerConnection
-                .createOffer({ iceRestart: true })
-                .then(async function (sdp) {
-                    await peerConnection.setLocalDescription(new RTCSessionDescription(sdp));
-                    Socket.emit("offer", id, Socket.id, sdp);
-                }).catch(e=>console.log(e));                
-                
-              }
+            peerConnection.oniceconnectionstatechange = async function () {
+                if (peerConnection.iceConnectionState === "disconnected" || peerConnection.iceConnectionState === "failed")
+                    await peerConnection
+                        .createOffer({ iceRestart: true })
+                        .then(async function (sdp) {
+                            await peerConnection.setLocalDescription(new RTCSessionDescription(sdp));
+                            Socket.emit("offer", id, Socket.id, sdp);
+                        }).catch(e => console.log(e));
+
+            }
             peerConnection.onicecandidate = event => {
                 if (event.candidate) {
                     Socket.emit("candidate", id, Socket.id, { sdpMLineIndex: event.candidate.sdpMLineIndex, candidate: event.candidate.candidate });
@@ -288,7 +408,7 @@ const Broadcastroom = () => {
                 .then(async function (sdp) {
                     await peerConnection.setLocalDescription(new RTCSessionDescription(sdp));
                     Socket.emit("offer", id, Socket.id, sdp);
-                }).catch(e=>console.log(e));    
+                }).catch(e => console.log(e));
         });
 
         Socket.on("answer", function (id, description) {
@@ -307,16 +427,21 @@ const Broadcastroom = () => {
             }
         });
 
-        Socket.on("msgchat", function (data) {
-            setChats([...chats, data]);
-        });
-        Socket.on("meetingended",function(){
+        
+        Socket.on("meetingended", function () {
             setMeetingended(true);
         })
         return () => {
             Socket.close();
         }
     }, [])
+    useEffect(()=>{
+        Socket.on("msg", function (data) {
+            console.log(data);
+            setChats([...chats, data]);
+        });
+        
+    },[chats,Socket])
 
     const joinLiveEvent = () => {
         setCall(true);
@@ -352,14 +477,14 @@ const Broadcastroom = () => {
 
     const ScreenShareAction = async () => {
         console.log(window.peerConnections);
-        const peers = window.peerConnections||{};
+        const peers = window.peerConnections || {};
         let x;
         const ww = isScreensharing;
         if (!isScreensharing)
             try {
-                let e = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }}),
+                let e = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" } }),
                     i = e.getVideoTracks()[0];
-                for (x in peers) {                    
+                for (x in peers) {
                     peers[x]
                         .getSenders()
                         .find(function (e) {
@@ -377,29 +502,29 @@ const Broadcastroom = () => {
             } catch (e) {
                 toast.error(e.message);
                 setScreensharing(ww);
-                    navigator.mediaDevices
-                        .getUserMedia(normalConstraints)
-                        .then(function (e) {
+                navigator.mediaDevices
+                    .getUserMedia(normalConstraints)
+                    .then(function (e) {
 
-                            let i = e.getVideoTracks()[0],
-                                s = e.getAudioTracks()[0];
-                            i.enabled = isVideoon;
-                            s.enabled = isMicon;
-                            for (x in peers) {
-                                var t = peers[x].getSenders().find(function (e) {
-                                    return e.track.kind === i.kind;
-                                }),
-                                    a = peers[x].getSenders().find(function (e) {
-                                        return e.track.kind === s.kind;
-                                    });
+                        let i = e.getVideoTracks()[0],
+                            s = e.getAudioTracks()[0];
+                        i.enabled = isVideoon;
+                        s.enabled = isMicon;
+                        for (x in peers) {
+                            var t = peers[x].getSenders().find(function (e) {
+                                return e.track.kind === i.kind;
+                            }),
+                                a = peers[x].getSenders().find(function (e) {
+                                    return e.track.kind === s.kind;
+                                });
                             t.replaceTrack(i);
                             a.replaceTrack(s);
-                            }
-                            window.stream.getTracks().forEach((e) => e.stop());
-                            window.stream = e;
-                            document.getElementById("video").srcObject = window.stream;
-                        })
-                        .catch((e) => toast.error(e.message));
+                        }
+                        window.stream.getTracks().forEach((e) => e.stop());
+                        window.stream = e;
+                        document.getElementById("video").srcObject = window.stream;
+                    })
+                    .catch((e) => toast.error(e.message));
             }
         else {
             navigator.mediaDevices
@@ -421,22 +546,26 @@ const Broadcastroom = () => {
                         a.replaceTrack(s);
                     }
                     window.stream.getTracks().forEach((e) => e.stop());
-                        window.stream = e;
-                        document.getElementById("video").srcObject = window.stream;
+                    window.stream = e;
+                    document.getElementById("video").srcObject = window.stream;
 
                 })
                 .catch((e) => console.log(e.message));
         }
     }
     const CallEndAction = () => {
-        
+
         if (window.confirm("This will delete all data of this live event from server.Are you sure?")) {
+            window.stream&&window.stream.getTracks().forEach((t)=>t.stop());
             console.log("Ending...");
             Socket.emit("endmeeting");
             //window.location.replace("/");
         }
     }
 
+    const submitchat = (text) => {
+        Socket.emit("chat", text);
+    }
 
     if (loading) {
         return <Broadcastroomwrapper>
@@ -445,11 +574,11 @@ const Broadcastroom = () => {
             </div>
         </Broadcastroomwrapper>
     }
-    if(meetended){
+    if (meetended) {
         return <Broadcastroomwrapper>
             <div className="content">
                 <h1>The event has ended now</h1>
-                <div className="joinbtnround" style={{width:"130px",marginTop:0}} onClick={()=>window.location.replace("/user/startlive")}>Create event</div>
+                <div className="joinbtnround" style={{ width: "130px", marginTop: 0 }} onClick={() => window.location.replace("/user/startlive")}>Create event</div>
             </div>
         </Broadcastroomwrapper>
     }
@@ -460,21 +589,39 @@ const Broadcastroom = () => {
     }
     if (liveinfo) {
         return <Broadcastroomwrapper>
-            {!call ? <div className="broadcast_detail">
-                <h1>Online live broadcasting</h1>
-                <h3 style={{ color: "blue", fontWeight: "bold" }} title={liveinfo?.title}>{liveinfo.title.length > 30 ? liveinfo.title.substring(0, 30) + "..." : liveinfo.title}</h3>
-
-                <div><span className="bold">Organiser: </span>{liveinfo.organiser}</div>
-                <div title={liveinfo?.description}><span className="bold">Description: </span>{liveinfo.description.length > 50 ? liveinfo.description.substring(0, 50) + "..." : liveinfo.description}</div>
-                <div><span className="bold">Total participants: </span>{liveinfo.total}</div>
-                <div className="joinbtnround" onClick={joinLiveEvent}>Join Now</div>
-            </div> : <div className="videowrapper"><video id="video" autoPlay muted={window.isOrganiser}></video>{liveinfo.isOrganiser && <div className="controller">
-                <div className="roundbtn" onClick={ScreenShareAction}>{isScreensharing ? <StopScreenShareIcon className="officon" /> : <ScreenShareIcon className="onicon" />}</div>
-                <div className="roundbtn" onClick={CameraAction}>{isVideoon ? <VideocamIcon className="onicon" /> : <VideocamOffIcon className="officon" />}</div>
-                <div className="roundbtn" onClick={MicAction}>{isMicon ? <MicIcon className="onicon" /> : <MicOffIcon className="officon" />}</div>
-                <div className="roundbtn" onClick={CallEndAction}><CallendIcon className="officon" /></div>
-            </div>}
-            </div>}
+            {!call ? <InfoSection joinLiveEvent={joinLiveEvent} /> :
+                <div className="videowrapper">
+                    <video id="video" autoPlay muted={window.isOrganiser}></video>
+                    {liveinfo.isOrganiser &&
+                        <div className="controller">
+                            <div className="roundbtn" onClick={ScreenShareAction}>
+                                {isScreensharing ? <StopScreenShareIcon className="officon" /> : <ScreenShareIcon className="onicon" />}
+                            </div>
+                            <div className="roundbtn" onClick={CameraAction}>
+                                {isVideoon ? <VideocamIcon className="onicon" /> : <VideocamOffIcon className="officon" />}
+                            </div>
+                            <div className="roundbtn" onClick={MicAction}>
+                                {isMicon ? <MicIcon className="onicon" /> : <MicOffIcon className="officon" />}
+                            </div>
+                            <div className="roundbtn" onClick={CallEndAction}>
+                                <CallendIcon className="officon" />
+                            </div>
+                        </div>}
+                    <MsgWrapper>
+                        <div className="chat_header">Live Chat</div>
+                        <div className="chat_container">
+                            {chats.map(chat => <ChatComponent key={Math.random().toString()} chat={chat} />)}
+                        </div>
+                        <div className="footer_chat">
+                            <input
+                                placeholder="Type your message"
+                                value={mymsg}
+                                onChange={(e) => setMyMsg(e.target.value)}
+                                onKeyDown={submitMsg}
+                            />
+                        </div>
+                    </MsgWrapper>
+                </div>}
         </Broadcastroomwrapper>
     }
 

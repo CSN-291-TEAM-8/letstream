@@ -10,6 +10,7 @@ var path = require('path');
 //var fs = require("fs");
 //const { generateOTP } = require("../controllers/auth");
 const LiveVideo = require('../models/LiveVideo');
+const Notification = require('../models/Notification');
 
 
 
@@ -76,6 +77,7 @@ exports.startSocket = async function (server) {
       }
       console.log("Ending event...");
       await live.remove();
+      await Notification.deleteMany({url:"/livestreaming/"+live.roomid},(err,res)=>{});
       io.to(socket.liveroomid).emit("meetingended");
     });
     socket.on("joinliveroom", async function(room){
@@ -90,15 +92,22 @@ exports.startSocket = async function (server) {
       console.log("joining room");
       if (checkAccessibility2({ user: user }, live)) {
         socket.liveroomid = room;
+        socket.username = user.username;
+        socket.avatar = user.avatar;
         socket.join(room);
         console.log("joined room " + room);
       }
       else {
         socket.liveroomid = null;
+        socket.username = null;
+        socket.avatar = null;
         socket.emit("errmsg", "Could not join room");
 
       }
 
+    });
+    socket.on("chat",function(msg){
+       io.to(socket.liveroomid).emit("msg",{text:msg,username:socket.username,avatar:socket.avatar});
     })
     socket.on("leave", (room) => {
       socket.leave(room);
@@ -127,10 +136,7 @@ exports.startSocket = async function (server) {
         $push:{participants:socket.uid}
       });
       console.log(socket.liveroomid);
-      const live = await LiveVideo.findOne({ roomid: socket.liveroomid }).populate({
-        path: "organiser",
-        select: "socketId"
-      });
+      
       socket.broadcast.to(socket.liveroomid).emit("watcher",socket.id);
     });
 
