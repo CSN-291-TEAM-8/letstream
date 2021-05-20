@@ -106,7 +106,7 @@ const Comments = ({ video }) => {
             case "likecomment":
                 Connect(`/video/${cid}/likecomment`, { method: "POST" }).then((d) => {
                     t = comments;
-                    t.map((c) => {
+                    t.forEach((c) => {
                         if (c._id === cid) {
                             if (d.isLiked) {
                                 if (c.isdisLiked)
@@ -140,7 +140,7 @@ const Comments = ({ video }) => {
             case "dislikecomment":
                 Connect(`/video/${cid}/dislikecomment`, { method: "POST" }).then((d) => {
                     t = comments;
-                    t.map((c) => {
+                    t.forEach((c) => {
                         if (c._id === cid) {
                             if (d.isdisLiked) {
                                 if (c.isLiked)

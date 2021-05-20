@@ -13,7 +13,7 @@ const VideoCard2 = ({url, _id,title, channel, views, timestamp, likesCount,disli
   if(live){
     return (
       <div className='videocard2'>
-          <img className="videocard_video" src={url}/>
+          <img className="videocard_video" src={url} alt=""/>
           <div className="videocard2_info">
             
             <div className="videocard_text" >
@@ -32,7 +32,7 @@ const VideoCard2 = ({url, _id,title, channel, views, timestamp, likesCount,disli
   if(noHoverplay){
     return (
       <div className='videocard2'>
-          <img className="videocard_video" src={video.url.replace(path.extname(video.url),".jpg")}/>
+          <img alt="" className="videocard_video" src={video.url.replace(path.extname(video.url),".jpg")}/>
           <div className="videocard2_info">
             
             <div className="videocard_text" >
@@ -51,7 +51,7 @@ const VideoCard2 = ({url, _id,title, channel, views, timestamp, likesCount,disli
   if(video){    
       return (
         <div className='videocard2'>
-            <div>{show?<video className='videocard_video' src={video.url} muted={true} autoPlay onMouseOut={()=>{setShow(false)}}></video>:<img className="videocard_video" src={video.url.replace(path.extname(video.url),".jpg")} onMouseOver={()=>{window.timeout = setTimeout(()=>{setShow(true)},700)}} onMouseOut={()=>{if(window.timeout){clearTimeout(window.timeout)}}}/>}</div>
+            <div>{show?<video className='videocard_video' src={video.url} muted={true} autoPlay onMouseOut={()=>{setShow(false)}}></video>:<img alt="" className="videocard_video" src={video.url.replace(path.extname(video.url),".jpg")} onMouseOver={()=>{window.timeout = setTimeout(()=>{setShow(true)},700)}} onMouseOut={()=>{if(window.timeout){clearTimeout(window.timeout)}}}/>}</div>
             <div className="videocard2_info">
               
               <div className="videocard_text" >
@@ -70,7 +70,7 @@ const VideoCard2 = ({url, _id,title, channel, views, timestamp, likesCount,disli
   }
     return (
         <div className='videocard2' key={_id}>
-          {show?<video className='videocard_video' src={url} muted={true} autoPlay onMouseOut={()=>{setShow(false)}}></video>:<img className="videocard_video" src={url.replace(path.extname(url),".jpg")} onMouseOver={()=>{window.timeout = setTimeout(()=>setShow(true),700)}} onMouseOut={()=>{if(window.timeout){clearTimeout(window.timeout)}}}/>}
+          {show?<video className='videocard_video' src={url} muted={true} autoPlay onMouseOut={()=>{setShow(false)}}></video>:<img className="videocard_video" alt="" src={url.replace(path.extname(url),".jpg")} onMouseOver={()=>{window.timeout = setTimeout(()=>setShow(true),700)}} onMouseOut={()=>{if(window.timeout){clearTimeout(window.timeout)}}}/>}
           <div className="videocard2_info">
             
             <div className="videocard_text" >

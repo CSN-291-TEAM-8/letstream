@@ -337,7 +337,7 @@ const VideoPlayer = () => {
                     </>
                 ) : <Noresults title={err.title} text={err.text} left={true} />}
             </div>
-            {(recommendedload || Videos.length == 0) ? <div className='videoplayer_suggested' style={{ marginRight: "-200px" }}>
+            {(recommendedload || Videos.length === 0) ? <div className='videoplayer_suggested' style={{ marginRight: "-200px" }}>
                 {!recommendedload && Videos.length > 0 && (<h3 className="videoplayer_h3">Suggested videos</h3>)}
                 <RecommendedVideos videos={Videos} loading={recommendedload} />
             </div> : <div className='videoplayer_suggested'>

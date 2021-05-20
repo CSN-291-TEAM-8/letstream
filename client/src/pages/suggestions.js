@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { Connect } from "../utils";
 import SideBarMain from "../components/Sidebar/Main/SideBarMain/SideBarMain";
 import MailIcon from '@material-ui/icons/Mail';
@@ -117,36 +117,36 @@ export const UserCard = ({ user, history, handleusersubscribe, setSubscription }
         {/* {user.isSubscribed?"Unsubscribe" <UnsubscribeIcon/>:"Subscribe" <MailIcon/>} */}
     </div>
 }
-const Users = [
-    {
-        _id: 1,
-        username: "kk2000",
-        fullname: "hello here",
-        avatar: "https://kkleap.github.io/assets/default.jpg",
-        isSubscribed: false,
-    },
-    {
-        _id: 2,
-        username: "kk222000",
-        fullname: "hello here",
-        avatar: "https://kkleap.github.io/assets/default_f.png",
-        isSubscribed: true,
-    },
-    {
-        _id: 3,
-        username: "kk22w000",
-        fullname: "hello here",
-        avatar: "https://kkleap.github.io/assets/default_f.png",
-        isSubscribed: false,
-    },
-    {
-        _id: 4,
-        username: "kk2s000",
-        fullname: "hello dhere",
-        avatar: "https://kkleap.github.io/assets/default.jpg",
-        isSubscribed: true,
-    }
-];
+// const Users = [
+//     {
+//         _id: 1,
+//         username: "kk2000",
+//         fullname: "hello here",
+//         avatar: "https://kkleap.github.io/assets/default.jpg",
+//         isSubscribed: false,
+//     },
+//     {
+//         _id: 2,
+//         username: "kk222000",
+//         fullname: "hello here",
+//         avatar: "https://kkleap.github.io/assets/default_f.png",
+//         isSubscribed: true,
+//     },
+//     {
+//         _id: 3,
+//         username: "kk22w000",
+//         fullname: "hello here",
+//         avatar: "https://kkleap.github.io/assets/default_f.png",
+//         isSubscribed: false,
+//     },
+//     {
+//         _id: 4,
+//         username: "kk2s000",
+//         fullname: "hello dhere",
+//         avatar: "https://kkleap.github.io/assets/default.jpg",
+//         isSubscribed: true,
+//     }
+// ];
 const Suggestions = () => {
     const [isLoading, setisLoading] = useState(true);
     const { setsubscriber } = React.useContext(SubscriberContext);

@@ -141,7 +141,7 @@ const Broadcastroom = () => {
     const { Socket, setSocket } = React.useContext(SocketContext);
     const [disconnected, setDisconnected] = useState(false);
     const [chats, setChats] = useState([]);
-    const [meetended,setMeetingended] = useState(true);
+    const [meetended,setMeetingended] = useState(false);
 
     const makeSocketConnection = () => {
         const token = localStorage.getItem("accesstoken");
@@ -363,7 +363,7 @@ const Broadcastroom = () => {
                     peers[x]
                         .getSenders()
                         .find(function (e) {
-                            return e.track.kind == i.kind;
+                            return e.track.kind === i.kind;
                         })
                         .replaceTrack(i);
                 }
@@ -387,10 +387,10 @@ const Broadcastroom = () => {
                             s.enabled = isMicon;
                             for (x in peers) {
                                 var t = peers[x].getSenders().find(function (e) {
-                                    return e.track.kind == i.kind;
+                                    return e.track.kind === i.kind;
                                 }),
                                     a = peers[x].getSenders().find(function (e) {
-                                        return e.track.kind == s.kind;
+                                        return e.track.kind === s.kind;
                                     });
                             t.replaceTrack(i);
                             a.replaceTrack(s);
@@ -412,10 +412,10 @@ const Broadcastroom = () => {
                     setScreensharing(!ww);
                     for (x in peers) {
                         var t = peers[x].getSenders().find(function (e) {
-                            return e.track.kind == i.kind;
+                            return e.track.kind === i.kind;
                         }),
                             a = peers[x].getSenders().find(function (e) {
-                                return e.track.kind == s.kind;
+                                return e.track.kind === s.kind;
                             });
                         t.replaceTrack(i);
                         a.replaceTrack(s);

@@ -55,7 +55,7 @@ const History = () => {
         const t = window.confirm("Do u want to remove this video from your history?");
         if(t){
             Connect("/user/removefromhistory/"+vid,{method:"DELETE"}).then(d=>{
-                setVideos(Videos.filter(function(v){return v._id!=vid}))                
+                setVideos(Videos.filter(function(v){return v._id !== vid}))                
             }).catch(err=>{
                 toast.error("Error in removing from history");
             })

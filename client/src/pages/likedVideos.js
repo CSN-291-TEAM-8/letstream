@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState} from "react";
 import { Link } from "react-router-dom";
 import VideoCard2 from "../components/VideoCard/VideoCard2";
 import SideBarMain from "../components/Sidebar/Main/SideBarMain/SideBarMain";

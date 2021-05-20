@@ -2,7 +2,7 @@ import React, { useState, createContext } from "react";
 import io from "socket.io-client";
 export const SocketContext = createContext(null);
 
-const socket = io(window.location.hostname=="localhost"?"http://localhost:5000":"https://letstreamiitr.herokuapp.com", {
+const socket = io(window.location.hostname==="localhost"?"http://localhost:5000":"https://letstreamiitr.herokuapp.com", {
   query: {
     token: localStorage.getItem('accesstoken')
   }
