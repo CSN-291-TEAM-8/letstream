@@ -15,7 +15,8 @@ export const lightTheme = {
     Skeletoncolor:"#aaa",
     specialnotice: "rgb(230,230,230)",
     inputBg: "#FFF",
-    footerColor: "#AED3D3"
+    footerColor: "#AED3D3",
+    livebg:"#000",
 };
 export const darkTheme = {
     primaryColor:"#fff",
@@ -27,5 +28,6 @@ export const darkTheme = {
     lightDark:"#201f1f",
     hoverColor:"#3e3a3a",
     selected:"#535353",
-    borderColor:"#4f4f4f"
+    borderColor:"#4f4f4f",
+    livebg:"#000",
 }

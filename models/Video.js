@@ -71,10 +71,10 @@ const VideoSchema = new Schema({
     }
 });
 VideoSchema.pre('remove', function(next) {
-    this.model('Comment').remove({ video: this._id }, next);
-    this.model("Report").remove({VideoId:this._id},next);
-    this.model("Notification").remove({VideoId:this._id},next);
-    this.model("likedVideo").remove({VideoId:this._id},next);
-    this.model("savedVideo").remove({VideoId:this._id},next);
+    this.model('Comment').deleteMany({ Video: this._id }, (err,res)=>{next(err)});
+    this.model("Report").deleteMany({VideoId:this._id},(err,res)=>{next(err)});
+    this.model("Notification").deleteMany({VideoId:this._id},(err,res)=>{next(err)});
+    this.model("likedVideo").deleteMany({Videoid:this._id},(err,res)=>{next(err)});
+    this.model("savedVideo").deleteMany({Videoid:this._id},(err,res)=>{next(err)});
 });
 module.exports = mongoose.model("Video", VideoSchema);

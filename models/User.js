@@ -72,11 +72,14 @@ const userSchema = new Schema({
     return await bcrypt.compare(password, this.password);
   };
   userSchema.pre('remove', function(next) {
-    this.model('Comment').remove({ user: this._id }, next);
-    this.model("Report").remove({reporter:this._id},next);
-    this.model("Notification").remove({sender:this._id},next);
-    this.model("likedVideo").remove({userid:this._id},next);
-    this.model("savedVideo").remove({userid:this._id},next);
+    this.model('Comment').deleteMany({ user: this._id }, (err,res)=>{next(err)});
+    this.model("OTPmodel").deleteMany({email:this.email},(err,res)=>{next(err)});
+    this.model("Video").deleteMany({organiser:this._id},(err,res)=>{next(err)});
+    this.model("Report").deleteMany({reporter:this._id},(err,res)=>{next(err)});
+    this.model("Notification").deleteMany({sender:this.username},(err,res)=>{next(err)});
+    this.model("Notification").deleteMany({sender:this._id},(err,res)=>{next(err)});
+    this.model("likedVideo").deleteMany({userid:this._id},(err,res)=>{next(err)});
+    this.model("savedVideo").deleteMany({userid:this._id},(err,res)=>{next(err)});
 });
   module.exports = mongoose.model("User", userSchema);
   

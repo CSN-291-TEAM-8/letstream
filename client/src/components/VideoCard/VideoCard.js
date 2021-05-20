@@ -23,11 +23,11 @@ const VideoCard = ({url, _id,title, channel, views, timestamp, channelImage,desc
   const [show,setShow] = React.useState(false);
    let dis = title;
    keywords[0].split(",").forEach(x=>{
-      dis+="| "+x+" "
+      dis+=" | "+x+" "
    })
     return (
         <div className='videocard' key={_id}>
-          {show?<video id={_id.toString()} className='videocard_video' src={url} muted={true} autoPlay onMouseOut={()=>{setShow(false)}}></video>:<img id={_id.toString()} className="videocard_video" src={url.replace(path.extname(url),".jpg")} onMouseOver={()=>{window.timeout = setTimeout(()=>setShow(true),700)}} onMouseOut={()=>{if(window.timeout){clearTimeout(window.timeout)}}}/>}
+          {show?<video id={_id.toString()} className='videocard_video' src={url} muted={true} autoPlay onMouseOut={()=>{setShow(false)}}></video>:<img id={_id.toString()} alt="" className="videocard_video" src={url.replace(path.extname(url),".jpg")} onMouseOver={()=>{window.timeout = setTimeout(()=>setShow(true),700)}} onMouseOut={()=>{if(window.timeout){clearTimeout(window.timeout)}}}/>}
           <div className="videocard_info">
             <Avatar 
               className='videocard_avatar' 

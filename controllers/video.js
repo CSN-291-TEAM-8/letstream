@@ -4,7 +4,7 @@ const Report = require("../models/Report");
 const Notification = require("../models/Notification");
 const fs = require("fs");
 const path = require("path");
-const {SOCKET,IO} = require("../utils/socketconnection");
+const { SOCKET, IO } = require("../utils/socketconnection");
 const Comment = require("../models/Comment");
 const transporter = require("../utils/nodemailer");
 const likedVideo = require("../models/likedVideo");
@@ -13,430 +13,614 @@ const savedVideo = require("../models/savedVideo");
 //const socket = SOCKET();
 const io = IO();
 
-exports.checkAccessibility = (req,video) =>{
+exports.checkAccessibility = (req, video) => {
     //console.log("video check",video);
     const organiser = video.organiser;
-    ////console.log("organiser",organiser);
+    //console.log("organiser",organiser);
     //video.presenters.toString().indexOf(req.user.id.toString())>-1||
-    return video.visibility=="public"||video.organiser._id.toString()==req.user.id.toString()||
-    (video.visibility=="sub-only"&&organiser.subscribers.toString().indexOf(req.user.id.toString())>-1)
-    ||(video.visibility=="custom"&&video.accessibility.indexOf(req.user.id.toString())>-1)
+    return req.user.isAdmin||video.visibility == "public" || video.organiser._id.toString() == req.user.id.toString() ||
+        (video.visibility == "sub-only" && organiser.subscribers.toString().indexOf(req.user.id.toString()) > -1)
+        || (video.visibility == "custom" && video.accessibility.indexOf(req.user.id.toString()) > -1)
 }
 
 
 
-exports.getvideo = async(req,res,next) =>{
+exports.getvideo = async (req, res, next) => {
     const vid = await Video.findById(req.params.id)
-    .populate({
-        path:"organiser",
-        select:"username avatar subscribers"
-    })
-    .lean()
-    .exec();
+        .populate({
+            path: "organiser",
+            select: "username avatar subscribers"
+        })
+        .lean()
+        .exec();
 
-    if(!vid){
+    if (!vid) {
         return next({
-            statusCode:404,
-            message:"This video is not found"
+            statusCode: 404,
+            message: "This video is not found"
         })
     }
-    
 
-    if(!this.checkAccessibility(req,vid)){
+
+    if (!this.checkAccessibility(req, vid)) {
         return next({
-            statusCode:401,
-            message:"You are not allowed to view this video"
+            statusCode: 401,
+            message: "You are not allowed to view this video"
         })
     }
-    const range = req.headers.range; 
-    
-    const videoPath = path.join(__dirname,`../uploads/${vid.servername}`);
+    const range = req.headers.range;
+
+    const videoPath = path.join(__dirname, `../uploads/${vid.servername}`);
     const videoSize = fs.statSync(videoPath).size;
-  
-    
+
+
     const CHUNK_SIZE = 10 ** 6; // 1MB
     const start = Number(range.replace(/\D/g, ""));
     const end = Math.min(start + CHUNK_SIZE, videoSize - 1);
-  
+
     // Create headers
     const contentLength = end - start + 1;
-    
+
     const headers = {
-      "Content-Range": `bytes ${start}-${end}/${videoSize}`,
-      "Accept-Ranges": "bytes",
-      "Content-Length": contentLength,
-      "Content-Type": vid.mimetype,
+        "Content-Range": `bytes ${start}-${end}/${videoSize}`,
+        "Accept-Ranges": "bytes",
+        "Content-Length": contentLength,
+        "Content-Type": vid.mimetype,
     };
-  
+
     // HTTP Status 206 for Partial Content
-    
+
     // create video read stream for this particular chunk
     const videoStream = fs.createReadStream(videoPath, { start, end });
-  
+
     // Stream the video chunk to the client
-    
+
     if (!range) {
         delete headers["Content-Range"];
         delete headers["Accept-Ranges"];
         videoStream.pipe(res);
     }
-    else{
+    else {
         res.writeHead(206, headers);
         videoStream.pipe(res);
     }
-    
+
 
 }
-exports.sendvideoinfo = async(req,res,next)=>{
-    const v = await Video.findById(req.params.id).populate({
-        path:"organiser",
-        select:"username avatar subscribers"
-    }).populate({
-        path:"comments",
-        select: "text createdAt",
-        populate: {
-        path: "user",
-        select: "username avatar",
-      },
-    }).lean()
-    .exec();
-    if(!v||!this.checkAccessibility(req,v)){
+exports.sendvideoinfo = async (req, res, next) => {
+    let v;
+    try {
+        v = await Video.findById(req.params.id).populate({
+            path: "organiser",
+            select: "username avatar subscribers"
+        }).populate({
+            path: "comments",
+            select: "text createdAt likedBy dislikedBy",
+            populate: {
+                path: "user",
+                select: "username avatar",
+            },
+        }).lean()
+            .exec();
+    }
+    catch (err) {
         return next({
-            statusCode:400,
-            message:"Either link is broken or you are not allowed to view it"
+            statusCode: 404,
+            message: "Video not found"
         })
     }
-    
-    v.isMyVideo = v.organiser._id.toString()==req.user.id;
+    if (!v || !this.checkAccessibility(req, v)) {
+        return next({
+            statusCode: 400,
+            message: "Either link is broken or you are not allowed to view it"
+        })
+    }
+
+    v.isMyVideo = v.organiser._id.toString() == req.user.id;
+    v.isAdmin = req.user.isAdmin;
     v.isLiked = v.likedBy.toString().includes(req.user.id);
     v.isdisLiked = v.dislikedBy.toString().includes(req.user.id);
     v.organiser.subscribersCount = v.organiser.subscribers.length;
+    v.reportCount = 0;
     v.organiser.isSubscribed = req.user.subscribedto.toString().includes(v.organiser._id.toString());
 
     const user = await User.findById(req.user.id);
-    const isSaved = await savedVideo.findOne({userid:user._id,Videoid:v._id});
-    if(isSaved){
+    const isSaved = await savedVideo.findOne({ userid: user._id, Videoid: v._id });
+    if (isSaved) {
         v.isSaved = true
     }
-    else{
+    else {
         v.isSaved = false;
     }
-    v.comments.forEach(function(c){
-        c.isMine = req.user.id==c.user._id.toString();
-    })
-    console.log("video",v);   
-    res.status(200).json({success:true,video:v});
+    v.comments.forEach(function (c) {
+        c.isMine = req.user.id == c.user._id.toString();
+        c.likesCount = c.likedBy.length;
+        c.dislikesCount = c.dislikedBy.length;
+        c.isLiked = c.likedBy.toString().includes(req.user.id);
+        c.isdisLiked = c.dislikedBy.toString().includes(req.user.id);
+        c.likedBy = [];
+        c.dislikedBy = [];
+    });
+    v.viewedby = [];
+    //console.log("video", v);
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, video: v });
 
 }
-exports.deletevideo = async(req,res,next)=>{
+exports.deletevideo = async (req, res, next) => {
     const video = await Video.findById(req.params.id);
-    if(video.organiser==req.user.id){
+    if (video.organiser == req.user.id) {
         await video.remove();
-        res.status(200).json({success:true,message:"Video deleted successfully"});
+        res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, message: "Video deleted successfully" });
     }
-    else{
+    else {
         return next({
-            statusCode:401,
-            message:"Action failed"
+            statusCode: 401,
+            message: "Action failed"
         })
     }
 }
-
-exports.Highlight = async(req,res,next) =>{
-   const highlightedvideos =  await Video.find({}).populate({
-       path:"organiser",
-       select:"username subscribers"
-   }).sort({likesCount:-1}).sort({dislikesCount:1});
-
-   const checkAccessibility = function(req,video){
-    ////console.log("check video",video);
-    const organiser = video.organiser;
-    //console.log(organiser);
-    return video.visibility=="public"||video.organiser._id.toString()==req.user.id.toString()||video.presenters.indexOf(req.user.id)>-1||
-    (video.visibility=="sub-only"&&organiser.subscribers.toString().indexOf(req.user.id.toString())>-1)
-    ||(video.visibility=="custom"&&video.accessibility.indexOf(req.user.id.toString())>-1)
-}
-   //select accessible videos
-   let accessibleones = highlightedvideos.filter(function(v){
-    return checkAccessibility(req,v);
-   });
-   accessibleones.forEach(function(v){v.isLiked = v.likedBy.toString().includes(req.user.id),v.isdisLiked = v.dislikedBy.toString().includes(req.user.id),v.likedBy=[],v.dislikedBy = [],v.organiser.subscribers=[]})
-     
-   res.status(200).json({success:true,videos:accessibleones});
-
-   }
-
-exports.toggleLike = async(req,res,next) =>{
-    const v = await Video.findById(req.params.id);
-    const user = await User.findById(req.user.id);
-    if(!v||!user){
+exports.editVideo = async(req,res,next)=>{
+    const video = await Video.findById(req.params.vid);
+    if(!video||video.organiser.toString()!=req.user.id){
         return next({
-            statusCode:404,
-            message:"Action failed"
+            statusCode:403,
+            message:"Failed to update details"
         })
     }
-    if(!this.checkAccessibility(req,v)){
+    const {title,description,keywords,visibility,accessibility} = req.body;
+    const fieldstoUpdate = {};
+    if(title) fieldstoUpdate.title = title;
+    if(description) fieldstoUpdate.description = description;
+    if(keywords) fieldstoUpdate.keywords = keywords;
+    if(visibility) fieldstoUpdate.visibility = visibility;
+    if(accessibility) fieldstoUpdate.accessibility = accessibility;
+    //console.log("editdata",req.body);
+    if(visibility=="custom"&&(!accessibility||accessibility.length==0)){
         return next({
-            statusCode:401,
-            message:"Unauthorised access"
+            statusCode:400,
+            message:"You must add atleast one user who can view your private video"
         })
     }
-    if(v.likedBy.indexOf(req.user.id)>-1){
-        v.likesCount = v.likesCount - 1;
-        v.likedBy.splice(v.likedBy.indexOf(req.user.id),1);
-        await likedVideo.findOneAndDelete({userid:req.user.id,Videoid:v._id},(err,res)=>{
-            //console.log(err,"\n err on line 145 of controllers/video")
-        });
-    }
-    else{
-        v.likedBy.push(req.user.id);
-        v.likesCount = v.likesCount + 1;
-        await likedVideo.create({userid:req.user.id,Videoid:v._id})
-    }
-    if(v.dislikedBy.includes(req.user.id)){
-        v.dislikedBy.splice(v.dislikedBy.indexOf(req.user.id),1);
-        v.dislikesCount = v.dislikesCount - 1;
-    }
-    await v.save();
+    await Video.findByIdAndUpdate(req.params.vid,{
+        $set:{...fieldstoUpdate}
+    },
+    {
+        new: true,
+        runValidators: true,
+    });
     res.status(200).json({success:true});
 }
 
-exports.toggledislike = async(req,res,next) =>{
-    const v = await Video.findById(req.params.id);
-    if(!v){
+exports.Highlight = async (req, res, next) => {
+    const highlightedvideos = await Video.find({}).populate({
+        path: "organiser",
+        select: "username subscribers"
+    }).sort({ likesCount: -1 }).sort({ dislikesCount: 1 });
+
+    const checkAccessibility = function (req, video) {
+        //////console.log("check video",video);
+        const organiser = video.organiser;
+        ////console.log(organiser);
+        return video.visibility == "public" || video.organiser._id.toString() == req.user.id.toString() || video.presenters.indexOf(req.user.id) > -1 ||
+            (video.visibility == "sub-only" && organiser.subscribers.toString().indexOf(req.user.id.toString()) > -1)
+            || (video.visibility == "custom" && video.accessibility.indexOf(req.user.id.toString()) > -1)
+    }
+    //select accessible videos
+    let accessibleones = highlightedvideos.filter(function (v) {
+        return checkAccessibility(req, v);
+    });
+    accessibleones.forEach(function (v) { v.isLiked = v.likedBy.toString().includes(req.user.id), v.isdisLiked = v.dislikedBy.toString().includes(req.user.id), v.likedBy = [], v.dislikedBy = [], v.organiser.subscribers = [] })
+
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, videos: accessibleones });
+
+}
+
+exports.toggleLike = async (req, res, next) => {
+    const v = await Video.findById(req.params.id).populate({
+        path: "organiser",
+        select: "subscribers"
+    });
+    const user = await User.findById(req.user.id);
+    if (!v || !user) {
         return next({
-            statusCode:404,
-            message:"Action failed"
+            statusCode: 404,
+            message: "Action failed"
         })
     }
-    if(!this.checkAccessibility(req,v)){
+    if (!this.checkAccessibility(req, v)) {
         return next({
-            statusCode:401,
-            message:"Unauthorised access"
+            statusCode: 401,
+            message: "Unauthorised access"
         })
     }
-    if(v.dislikedBy.indexOf(req.user.id)>-1){
+    await Notification.deleteMany({type:"likevideo",VideoId:v._id},(err,res)=>{
+        if(err) console.log(err)
+    })
+    let isLiked = false;
+    if (v.likedBy.indexOf(req.user.id) > -1) {
+        v.likesCount = v.likesCount - 1;
+        v.likedBy.splice(v.likedBy.indexOf(req.user.id), 1);
+        await likedVideo.findOneAndDelete({ userid: req.user.id, Videoid: v._id }, (err, res) => {
+            if (err) {
+                return next({
+                    statusCode: 500,
+                    message: "Action failed"
+                })
+            }
+        });
+    }
+    else {
+        v.likedBy.push(req.user.id);
+        const noti = await Notification.create({
+            receiver:[v.organiser._id],
+            sender:req.user.username,
+            VideoId:v._id,
+            Message:"Someone liked your video "+v.title,
+            type:"likevideo",
+            url:`/video/${v._id}`,
+        })
+        await User.findByIdAndUpdate(v.organiser._id,{
+            $push:{unseennotice:noti._id}
+        })
+        await user.save();
+        isLiked = true;
+        v.likesCount = v.likesCount + 1;
+        await likedVideo.create({ userid: req.user.id, Videoid: v._id })
+    }
+    if (v.dislikedBy.includes(req.user.id)) {
+        v.dislikedBy.splice(v.dislikedBy.indexOf(req.user.id), 1);
         v.dislikesCount = v.dislikesCount - 1;
-        v.dislikedBy.splice(v.dislikedBy.indexOf(req.user.id),1);
     }
-    else{
+    await v.save();
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, isLiked: isLiked, isdisLiked: false });
+}
+
+exports.toggledislike = async (req, res, next) => {
+    const v = await Video.findById(req.params.id).populate({
+        path:"organiser",
+        select:"subscribers"
+    });
+    if (!v) {
+        return next({
+            statusCode: 404,
+            message: "Action failed"
+        })
+    }
+    await Notification.deleteMany({type:"likevideo",VideoId:v._id,sender:req.user.username},(err,res)=>{
+        if(err) console.log(err)
+    })
+    if (!this.checkAccessibility(req, v)) {
+        return next({
+            statusCode: 401,
+            message: "Unauthorised access"
+        })
+    }
+    let isdisLiked = false;
+    if (v.dislikedBy.indexOf(req.user.id) > -1) {
+        v.dislikesCount = v.dislikesCount - 1;
+        v.dislikedBy.splice(v.dislikedBy.indexOf(req.user.id), 1);
+    }
+    else {
+        isdisLiked = true;
         v.dislikedBy.push(req.user.id);
         v.dislikesCount = v.dislikesCount + 1;
     }
-    if(v.likedBy.includes(req.user.id)){
-        v.likedBy.splice(v.likedBy.indexOf(req.user.id),1);
+    if (v.likedBy.includes(req.user.id)) {
+        v.likedBy.splice(v.likedBy.indexOf(req.user.id), 1);
         v.likesCount = v.likesCount - 1;
-        await likedVideo.findOneAndDelete({userid:req.user.id,Videoid:v._id},(err,res)=>{
-            //console.log(err,"\n err on line 187 of controllers/video")
+        await likedVideo.findOneAndDelete({ userid: req.user.id, Videoid: v._id }, (err, res) => {
+            ////console.log(err,"\n err on line 187 of controllers/video")
         });
     }
     await v.save();
-    res.status(200).json({success:true});
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, isLiked: false, isdisLiked: isdisLiked });
 }
 
-exports.addComment = async(req,res,next)=>{
-   const video = await Video.findById(req.params.id);
-   let rcomment;
-   if(req.body.commentId)
-     rcomment = await Comment.findById(req.body.commentId);
-   if(!video)
-     return next({
-         statusCode:404,
-         message:"Video not found"
-     })
-    if(!this.accessibility(req,video)){
+exports.addComment = async (req, res, next) => {
+    const video = await Video.findById(req.params.id).populate({
+        path: "organiser",
+        select: "subscribers"
+    });
+    let rcomment;
+    if (req.body.commentId)
+        rcomment = await Comment.findById(req.body.commentId).lean().exec();
+    if (!video)
         return next({
-            statusCode:401,
-            message:"Unauthorised access"
+            statusCode: 404,
+            message: "Video not found"
+        })
+    if (!this.checkAccessibility(req, video)) {
+        return next({
+            statusCode: 401,
+            message: "Unauthorised access"
         })
     }
-    const comment = req.body.Repliedto?await Comment.create({
+    let comment = req.body.Repliedto ? await Comment.create({
         user: req.user.id,
         Video: req.params.id,
         text: req.body.text,
         Repliedto: req.body.Repliedto
     }) :
-    await Comment.create({
-        user: req.user.id,
-        Video: req.params.id,
-        text: req.body.text,        
-    });
-    if(req.body.Repliedto){
-        await Notification.create({receiver:[req.body.Repliedto],url:`/stream/${video._id}`,VideoId:video._id,commentId:rcomment&&rcomment._id,sender:req.user.fullname,avatar:req.user.avatar,Message:`${req.user.fullname} replied to your comment in the video stream of title ${video.title}`,type:"replytocomment"});
+        await Comment.create({
+            user: req.user.id,
+            Video: req.params.id,
+            text: req.body.text,
+        });
+    if (req.body.Repliedto) {
+        await Notification.create({ receiver: [req.body.Repliedto], url: `/video/${video._id}/?commentId=${comment._id}`, VideoId: video._id, commentId: rcomment && rcomment._id, sender: req.user.username, avatar: req.user.avatar, Message: `${req.user.fullname} replied to your comment in the video ${video.title} by ${video.organiser.username}`, type: "replytocomment" });
     }
     video.comments.push(comment._id);
     await video.save();
     comment = await comment
-    .populate({ path: "user", select: "avatar username fullname" })
-    .execPopulate();
-    io.to(req.params.id).emit("newmsg",comment);
-  res.status(200).json({ success: true, data: comment});
-    
+        .populate({ path: "user", select: "avatar username" })
+        .execPopulate();
+    comment.likesCount = 0;
+    comment.dislikesCount = 0;
+    comment.isLiked = false;
+    comment.isdisLiked = false;
+    comment.isMine = true;
+    //io.to(req.params.id).emit("newmsg",comment);
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, comment: comment });
+
 }
-exports.deleteComment = async(req,res,next)=>{
-    const video = await Video.findById(req.params.id);
-   if(!video)
-     return next({
-         statusCode:404,
-         message:"Video not found"
-     })
-    if(!this.checkAccessibility(req,video)){
+exports.deleteComment = async (req, res, next) => {
+    const video = await Video.findById(req.params.id).populate({
+        path: "organiser",
+        select: "subscribers"
+    });
+    if (!video)
         return next({
-            statusCode:401,
-            message:"Unauthorised access"
+            statusCode: 404,
+            message: "Video not found"
+        })
+    if (!this.checkAccessibility(req, video)) {
+        return next({
+            statusCode: 401,
+            message: "Unauthorised access"
         })
     }
     const comment = await Comment.findById(req.params.commentId);
-    if(!comment||comment.user!=req.user.id||!req.user.isAdmin){// Admin and owner can delete comment
+    //console.log(comment)
+    if ((!comment || comment.user.toString() != req.user.id)&&!req.user.isAdmin) {// Admin and owner can delete comment
         return next({
-            statusCode:400,
-            message:"Action failed"
+            statusCode: 400,
+            message: "Action failed"
         })
     }
-    await comment.remove();
-    await Notification.deleteMany({commentId:comment._id},(err,res)=>{
-        //console.log("Generated on line 245 ,controllers/video\n"+err)
+    
+    await Notification.deleteMany({ commentId: comment._id }, (err, res) => {
+        ////console.log("Generated on line 245 ,controllers/video\n"+err)
     });
-    video.comments.splice(video.comments.indexOf(comment._id),1);
+    video.comments.splice(video.comments.indexOf(comment._id), 1);
     await video.save();
-    res.status(200).json({success:true});
+    await comment.remove();
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true });
 
 }
-exports.reportVideo = async(req,res,next)=>{
-    const video = await Video.findById(req.params.id);
-    if(!video||!this.checkAccessibility(req,video)||video.organiser==req.user.id){
+exports.reportVideo = async (req, res, next) => {
+    const video = await Video.findById(req.params.id).populate({
+        path:"organiser",
+        select:"subscribers fullname"
+    });
+    if (!video || !this.checkAccessibility(req, video) || video.organiser._id.toString() == req.user.id) {
         return next({
-            statusCode:400,
-            message:"Action failed"
+            statusCode: 400,
+            message: "Action failed"
         })
     }
-    const report = await Report.findOne({ reporter: req.user.id, videoId: req.params.id });
+    if(req.body.report.length>300){
+        return next({
+            statusCode: 403,
+            message: "Report length should not exeeed 300 letters"
+        })
+    }
+    const report = await Report.findOne({ reporter: req.user.id, VideoId: req.params.id });
     if (!video.reportCount) {
         video.reportCount = 0;
-      }
-      if (report) {
+    }
+    if (report) {
         video.reportCount = video.reportCount - 1;
         await report.remove();
         //delete previous report filed by this user and replace it with new report
-      }
-      video.reportCount = video.reportCount + 1;
-        
-      //mail admin for checking 
-      //this stream so that appropriate action will be taken
-      const msg ={
-        to:process.env.ADMIN_EMAIL,
-        from:process.env.EMAIL,
-        subject:`Report against the video "${video.title}"`,
-        text:"Hello admin,\nUsers of letstream are reporting the video stream Videoed by "+video.organiser.fullname+"\nKindly,take the suitable action against it.URL of the video is \n\n"+video.url+"\nTotal reports filled have reached "+video.reportCount+"\n\nHappy Streaming",
-        
-      }; 
-      const admin = await User.find({isAdmin:true});
-      const adminid = [];
-      for(x of admin){
-          adminid.push(x._id);
-      }
-      if(admin){
-          await Notification.create({
-              Message:"Hello admin,\nUsers of letstream are reporting the video stream Videoed by "+video.organiser.fullname+"\nKindly,take the suitable action against it.\nTotal reports filled have reached "+video.reportCount,
-              sender:"system",
-              receiver:adminid,
-              url:video.url,
-              VideoId:video._id
-          })
-      }
-      if(video.reportCount%10==0){
-        transporter.sendMail(msg).then(()=>{
-            res.status(200).json({success:true,message:"Kindly check your email for OTP"});
-          }).catch((error)=>{
-            res.status(200).json({success:false,message:error.message});
-          })
-      }
+    }
+    await Report.create({
+        reporter:req.user.id,
+        VideoId:req.params.id,
+        description:req.body.report
+    })
+    video.reportCount = video.reportCount + 1;
+
+    //mail admin for checking 
+    //this video so that appropriate action will be taken
+    const msg = {
+        to: process.env.ADMIN_EMAIL,
+        from: process.env.EMAIL,
+        subject: `Report against the video "${video.title}"`,
+        text: "Hello admin,\nUsers of letstream are reporting the video uploaded by " + video.organiser.fullname + "\n.Kindly,take the suitable action against it.URL of the video is \n\n" + process.env.SERVER_ADDRESS+"/video/"+video._id + "\nTotal reports filled have reached " + video.reportCount + "\n\nHappy Streaming",
+
+    };
+    const admin = await User.find({ isAdmin: true });
+    const adminid = [];
+    for (x of admin) {
+        adminid.push(x._id);
+    }
+    if (admin) {
+        await Notification.create({
+            Message: "Hello admin,\nUsers of letstream are reporting the video by " + video.organiser.fullname + "\nKindly,take the suitable action against it.\nTotal reports filled have reached " + video.reportCount,
+            sender: "system",
+            receiver: adminid,
+            url: "/video/"+video._id,
+            VideoId: video._id
+        })
+    }
+    await video.save();
+    if (video.reportCount % 10 == 0) {
+        transporter.sendMail(msg).then(() => {
+            res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, message: "Report submitted successfully" });
+        }).catch((error) => {
+            res.status(500).json({ success: false, message: "Mail was not sent to admin" });
+        })
+    }
+    else{
+        res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, message: "Report submitted successfully" });
+    }
+    
 }
 
-exports.searchVideo = async(req,res,next)=>{
+exports.searchVideo = async (req, res, next) => {
     if (!req.body.term) {
-        return ;
-      }
-    
-      let Videos = [];
-    
-      if (req.body.term) {
+        return;
+    }
+
+    let Videos = [];
+
+    if (req.body.term) {
         const regex = new RegExp(req.body.term, "i");
-        Videos = await Video.find({$or: [{ title: regex },{keywords:{$in:[regex]}},{description:regex}]}).populate({path:"organiser",select:"username subscribers"}).sort("-createdAt");
-        
-      }
-    //   //console.log(Videos);
-      Videos = Videos.filter((V,pos)=>{ return this.checkAccessibility(req,V)});
-      Videos.forEach(v=>{v.isLiked = v.likedBy.toString().includes(req.user.id),v.isdisLiked = v.dislikedBy.toString().includes(req.user.id),v.likedBy=[],v.dislikedBy = [],v.organiser.subscribers = []})
-      res.status(200).json({ success: true, videos:Videos});
+        Videos = await Video.find({ $or: [{ title: regex }, { keywords: { $in: [regex] } }, { description: regex }] }).populate({ path: "organiser", select: "username subscribers" }).sort("-createdAt");
+
+    }
+    //   ////console.log(Videos);
+    Videos = Videos.filter((V, pos) => { return this.checkAccessibility(req, V) });
+    Videos.forEach(v => { v.isLiked = v.likedBy.toString().includes(req.user.id), v.isdisLiked = v.dislikedBy.toString().includes(req.user.id), v.likedBy = [], v.dislikedBy = [], v.organiser.subscribers = [] })
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, videos: Videos });
 }
 
-exports.likecomment = async(req,res,next)=>{
+exports.likecomment = async (req, res, next) => {
     const c = await Comment.findById(req.params.cid);
-    if(!c){
-        return ;
-    }
-    
-    const v = await Video.findById(c.Video);
-    if(!v){
+    if (!c) {
         return next({
-            statusCode:404,
-            message:"Action failed"
+            statusCode: 400,
+            message: "Invalid request"
+        });
+    }
+
+    const v = await Video.findById(c.Video).populate({
+        path:"organiser",
+        select:"subscribers"
+    });
+    if (!v) {
+        return next({
+            statusCode: 404,
+            message: "Action failed"
         })
     }
-    if(!this.checkAccessibility(req,v)){
+    if (!this.checkAccessibility(req, v)) {
         return next({
-            statusCode:401,
-            message:"Unauthorised access"
+            statusCode: 401,
+            message: "Unauthorised access"
         })
     }
-    if(c.likedBy.indexOf(req.user.id)>-1){
+    let isliked = false;
+    let commentowner = await User.findById(c.user);
+    if (c.likedBy.toString().indexOf(req.user.id) > -1) {
         c.likesCount = c.likesCount - 1;
-        c.likedBy.splice(c.likedBy.indexOf(req.user.id),1);
+        c.likedBy.splice(c.likedBy.indexOf(req.user.id), 1);
+        const noti = await Notification.findOne({type:"likecomment",commentId:c._id,sender:req.user.username});
+        
+        const index = commentowner.unseennotice.indexOf(noti._id)
+        if(index > -1){
+            commentowner.unseennotice.splice(index,1);
+            await commentowner.save();
+            await noti.remove();
+        }
     }
-    else{
+    else {
         c.likedBy.push(req.user.id);
+        await Notification.deleteMany({commentId:c._id,type:"likecomment"},(err,res)=>{
+            //console.log(err);
+        })
+        if(c.user!=req.user.id){
+        const noti2 = await Notification.create({
+            sender:req.user.username,
+            receiver:[c.user],
+            type:"likecomment",
+            VideoId:v._id,
+            commentId:c._id,
+            Message:"Someone liked your comment",
+            url:'/video/'+v._id+"/?commentId="+c._id
+        })
+        commentowner.unseennotice.push(noti2._id);
+    }
+        await commentowner.save();
         c.likesCount = c.likesCount + 1;
+        isliked = true;
     }
-    if(c.dislikedBy.includes(req.user.id)){
-        c.dislikedBy.splice(c.dislikedBy.indexOf(req.user.id),1);
+    if (c.dislikedBy.includes(req.user.id)) {
+        c.dislikedBy.splice(c.dislikedBy.indexOf(req.user.id), 1);
         c.dislikesCount = c.dislikesCount - 1;
+
     }
-    await c.save();    
-    res.status(200).json({success:true});
+    await c.save();
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, isdisLiked: false, isLiked: isliked });
 }
 
-exports.dislikecomment = async(req,res,next)=>{
+exports.dislikecomment = async (req, res, next) => {
     const c = await Comment.findById(req.params.cid);
-    if(!c){
-        return ;
-    }
-    
-    const v = await Video.findById(c.Video);
-    if(!v){
+    if (!c) {
         return next({
-            statusCode:404,
-            message:"Action failed"
+            statusCode: 400,
+            message: "Invalid request"
+        });
+    }
+
+    const v = await Video.findById(c.Video).populate({
+        path:"organiser",
+        select:"subscribers"
+    });
+    if (!v) {
+        return next({
+            statusCode: 404,
+            message: "Action failed"
         })
     }
-    if(!this.checkAccessibility(req,v)){
+    if (!this.checkAccessibility(req, v)) {
         return next({
-            statusCode:401,
-            message:"Unauthorised access"
+            statusCode: 401,
+            message: "Unauthorised access"
         })
     }
-    if(c.dislikedBy.indexOf(req.user.id)>-1){
+    let disliked = false;
+    const noti = await Notification.findOne({type:"likecomment",commentId:c._id,sender:req.user.username});
+    const commentowner = await User.findById(c.user);
+    const index = commentowner.unseennotice.indexOf(noti._id)
+    if(index > -1){
+        commentowner.unseennotice.splice(index,1);
+        await commentowner.save();
+        await noti.remove();
+    }
+    if (c.dislikedBy.indexOf(req.user.id) > -1) {
         c.dislikesCount = c.dislikesCount - 1;
-        c.dislikedBy.splice(c.dislikedBy.indexOf(req.user.id),1);
+        c.dislikedBy.splice(c.dislikedBy.indexOf(req.user.id), 1);
     }
-    else{
+    else {
         c.dislikedBy.push(req.user.id);
         c.dislikesCount = c.dislikesCount + 1;
+        disliked = true;
     }
-    if(c.likedBy.includes(req.user.id)){
-        c.likedBy.splice(c.likedBy.indexOf(req.user.id),1);
+    if (c.likedBy.includes(req.user.id)) {
+        c.likedBy.splice(c.likedBy.indexOf(req.user.id), 1);
         c.likesCount = c.likesCount - 1;
     }
     await c.save();
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, isLiked: false, isdisLiked: disliked });
+}
+
+exports.addoneView = async(req,res,next)=>{
+    const v = await Video.findOne({_id:req.params.url}).populate({
+        path:"organiser",
+        select:"subscribers"
+    });
+    if(!v||!this.checkAccessibility(req,v)){
+        return;
+    }
+    if(v.viewedby.toString().includes(req.user.id)){
+        return;
+    }
+    //console.log("viewed",v);
+    await Video.findByIdAndUpdate(req.params.url,{
+        $inc:{views:1}, 
+        $push:{viewedby:req.user.id},        
+    })
+    
     res.status(200).json({success:true});
 }

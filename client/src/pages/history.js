@@ -7,6 +7,7 @@ import styled from "styled-components";
 import { Loader } from "../components/RecommendedVideos/Home";
 import NoResults from "../components/Noresults";
 import { Connect } from "../utils";
+import { toast } from "react-toastify";
 
 const Wrapper = styled.div`
 margin-top:-100px;
@@ -44,7 +45,22 @@ const History = () => {
             setErr({ text: err.message, title: "Error in loading page" });
             setisLoading(false);
         })
-    }, [])
+    }, []);
+    
+
+    const RemovefromHistory = (vid)=>{
+        if(!vid){
+            return;
+        }
+        const t = window.confirm("Do u want to remove this video from your history?");
+        if(t){
+            Connect("/user/removefromhistory/"+vid,{method:"DELETE"}).then(d=>{
+                setVideos(Videos.filter(function(v){return v._id!=vid}))                
+            }).catch(err=>{
+                toast.error("Error in removing from history");
+            })
+        }
+    }
     if (error.text) {
         return (
             <>
@@ -77,6 +93,7 @@ const History = () => {
                             views={item.views}
                             timestamp={item.createdAt}
                             channel={item.organiser.username}
+                            ClickListenEvent={RemovefromHistory}
                         />
                     </Link>)}
                 </div> : <Loader />}

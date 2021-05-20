@@ -17,7 +17,16 @@ export const Center = styled.div`
   }
 `;
 
-const NoResults = ({ title, text,center}) => {
+const NoResults = ({ title, text,center,left}) => {
+  if(left){
+    return (
+      <Center style={{left:`calc(50% - 200px)`}} className="noresult">
+        <img src={noresults} alt="no results" />
+        <h2>{title}</h2>
+        <p className="danger">{text}</p>
+      </Center>
+    )
+  }
   return !center?
    (
     <Center style={{left:center?"calc(50% - 150px) !important":"calc(50% + 150px) !important"}}>

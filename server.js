@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const {startSocket} = require("./utils/socketconnection");
+
 const helmet = require("helmet");
 const auth = require("./routes/auth");
 const admin = require("./routes/admin");
@@ -11,6 +11,7 @@ const chat = require("./routes/chat");
 const errorHandler = require("./middleware/errorhandle");
 const DB = require("./utils/db.config");
 const User = require("./models/User");
+const { startSocket } = require("./utils/socketconnection");
 
 const app = express();
 
@@ -32,7 +33,7 @@ app.use(function (req, res, next) {
       next();
   });
 DB();
-startSocket();
+
 const clearSubs = async ()=>{
  const users =  await User.find({});
  for(x of users){
@@ -50,5 +51,5 @@ app.use("/user", user);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-exports.server = app.listen(PORT, console.log(`Server started at http://localhost:${PORT}`));
-
+const server = app.listen(PORT, function(){console.log(`Server started at http://localhost:${PORT}`)});
+startSocket(server);

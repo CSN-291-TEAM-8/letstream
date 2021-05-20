@@ -48,6 +48,13 @@ function Navbar2(){
                 </Link>
                 <Link to="/user/notifications">
                 <NotificationsIcon className="header_icon" title="Notifications"/>
+                <div className="upper-wrapper" id="noti-wrapper" style={{display: "none"}}>
+                    <div className="middle-wrapper">
+                        <div className="lower-wrapper" id="noti-count">
+
+                        </div>
+                    </div>
+                </div>
                 </Link>
                 <Link to={`/user/${myinfo._id}`}>
                 <Avatar

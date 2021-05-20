@@ -198,7 +198,7 @@ const Channel = () => {
                 </div>
               </div>
 
-              {profile.isMe && <EditProfile isAdmin={profile.isAdmin&&!profile.isMe}/>}
+              
 
               {!profile.isMe && isSubscribed && (
                 <div className="btn unsubscribe-btn" onClick={() => handleSubscribe(profile)}>
@@ -211,6 +211,7 @@ const Channel = () => {
                   {load ? <CircularProgress size={26} color="inherit"/> : "Subscribe"}
                 </div>
               )}
+              {(profile.isMe||profile.isAdmin) && <EditProfile isAdmin={profile.isAdmin&&!profile.isMe} isMe={profile.isMe} _id={profile._id}/>}
             </div>
 
             <div className="tabs">

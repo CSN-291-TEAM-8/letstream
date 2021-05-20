@@ -31,7 +31,7 @@ exports.deleteVideo = async (req, res, next) =>{
 }
 
 exports.deleteUserId = async(req,res,next) =>{
-    if(!req.user.isAdmin)
+    if(!req.user.isAdmin&&req.params.userid!=req.user.id)
         return next({
             statusCode:401,
             message:"Action failed"

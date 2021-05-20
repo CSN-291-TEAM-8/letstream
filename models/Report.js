@@ -11,7 +11,8 @@ const ReportSchema = new mongoose.Schema({
     },
     VideoId:{
         type:mongoose.Schema.ObjectId,
-        ref:"Video"
+        ref:"Video",
+        required:true,
     }
 })
 module.exports = mongoose.model("Report", ReportSchema);

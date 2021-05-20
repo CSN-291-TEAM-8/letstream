@@ -4,16 +4,19 @@ import './index.css';
 import App from './App';
 import SubscriberProvider from './utils/SubscriberContext';
 import { ThemeProvider } from './utils/ThemeContext';
+import SocketProvider from './utils/SocketContext';
 
 //import reportWebVitals from './reportWebVitals';
 
 ReactDOM.render(
   <React.StrictMode>
-    <SubscriberProvider>
-      <ThemeProvider>
-        <App />
-      </ThemeProvider>
-    </SubscriberProvider>
+    <SocketProvider>
+      <SubscriberProvider>
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
+      </SubscriberProvider>
+    </SocketProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );

@@ -6,6 +6,8 @@ const savedVideo = require("../models/savedVideo");
 const Video = require("../models/Video");
 const likedVideo = require("../models/likedVideo");
 const Notification = require("../models/Notification");
+const OTPmodel = require("../models/OTPmodel");
+const LiveVideo = require("../models/LiveVideo");
 
 exports.getHistory = async (req, res, next) => {
   const user = await User.findById(req.user.id).populate({
@@ -15,7 +17,7 @@ exports.getHistory = async (req, res, next) => {
       path: "organiser",
       select: "username subscribers",
     },
-  });
+  }).lean().exec();
   if (!user) {
     return next({
       statusCode: "400",
@@ -23,39 +25,40 @@ exports.getHistory = async (req, res, next) => {
       logout: true
     })
   }
+  //console.log("history",user.history);
   user.history = user.history.filter((v) => checkAccessibility(req, v)).reverse();
-  user.history.forEach(function(v){ v.isLiked = v.likedBy.toString().indexOf(req.user.id)>-1,v.isdisLiked = v.dislikedBy.toString().indexOf(req.user.id)>-1,v.likedBy=[],v.dislikedBy = [],v.organiser.subscribers = []});
+  user.history.forEach(function (v) { v.isLiked = v.likedBy.toString().indexOf(req.user.id) > -1, v.isdisLiked = v.dislikedBy.toString().indexOf(req.user.id) > -1, v.likedBy = [], v.dislikedBy = [], v.organiser.subscribers = [] });
   //user.history = user.history.map(v => v.organiser.subscribers = []);
-  res.status(200).json({ success: true, videos: user.history });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, videos: user.history });
 
 }
 
 exports.getSuggestions = async (req, res, next) => {
   let data = [];
-//   const users =  await User.find({});
-//  for(x of users){
-//    x.subscribedto = [];
-//    x.subscribers = [];
-//    await x.save();
-//  }
-  ////console.log(req.user);
+  //   const users =  await User.find({});
+  //  for(x of users){
+  //    x.subscribedto = [];
+  //    x.subscribers = [];
+  //    await x.save();
+  //  }
+  //////console.log(req.user);
   await User.find({}).then((users) => {
-    ////console.log(u);
+    //////console.log(u);
     users.forEach(function (u) {
       let isSubscribed = false;
       isSubscribed = req.user.subscribedto.toString().includes(u._id.toString());
-      if (!(u._id.toString().indexOf(req.user.id)>-1))
+      if (!(u._id.toString().indexOf(req.user.id) > -1))
         data.push({ avatar: u.avatar, fullname: u.fullname, username: u.username, _id: u._id, isSubscribed });
     })
   }).catch(err => {
-    //console.log(err);
+    ////console.log(err);
     return next({
       statusCode: 500,
       message: "Internal server error"
     })
   })
 
-  res.status(200).json({ success: true, users: data });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, users: data });
 
 }
 
@@ -76,13 +79,13 @@ exports.getMyVideos = async (req, res, next) => {
     })
   }
   user.videos = user.videos.reverse();
-  user.videos.forEach(function(v){v.isLiked = v.likedBy.toString().indexOf(req.user.id)>-1,v.isdisLiked = v.dislikedBy.toString().indexOf(req.user.id)>-1,v.likedBy=[],v.dislikedBy = []});
-  res.status(200).json({ success: true, videos: user.videos });
+  user.videos.forEach(function (v) { v.isLiked = v.likedBy.toString().indexOf(req.user.id) > -1, v.isdisLiked = v.dislikedBy.toString().indexOf(req.user.id) > -1, v.likedBy = [], v.dislikedBy = [] });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, videos: user.videos });
 
 }
 
 exports.getsavedVideos = async (req, res, next) => {
-  const userv = await User.findById(req.user._id);
+  const userv = await User.findById(req.user.id);
   const savedVideos = await savedVideo.find({ userid: userv._id }).populate({
     path: "Videoid",
     select: "url title description createdAt visibility views accessibility likedBy dislikedBy likesCount dislikesCount",
@@ -90,19 +93,20 @@ exports.getsavedVideos = async (req, res, next) => {
       path: "organiser",
       select: "username subscribers"
     }
-  }).sort("-createdAt");
-  let data = savedVideos.filter(v => checkAccessibility(req, v.VideoId));
+  }).sort("-createdAt").lean().exec();
+  //console.log("savedvideo", JSON.stringify(savedVideos));
+  let data = savedVideos.filter(v => checkAccessibility(req, v.Videoid));
   const receiveddata = [];
   data.forEach(function (v) {
-    v.VideoId.isLiked = (v.VideoId.likedBy.toString().indexOf(req.user.id) > -1);
-    v.VideoId.isdisLiked = (v.VideoId.dislikedBy.toString().indexOf(req.user.id) > -1);
-    v.VideoId.likedBy=[];
-    v.VideoId.dislikedBy = [];
-    v.VideoId.organiser.subscribers = []
-    receiveddata.push(v.VideoId);
+    v.Videoid.isLiked = (v.Videoid.likedBy.toString().indexOf(req.user.id) > -1);
+    v.Videoid.isdisLiked = (v.Videoid.dislikedBy.toString().indexOf(req.user.id) > -1);
+    v.Videoid.likedBy = [];
+    v.Videoid.dislikedBy = [];
+    v.Videoid.organiser.subscribers = []
+    receiveddata.push(v.Videoid);
   })
 
-  res.status(200).json({ success: true, videos: receiveddata });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, videos: receiveddata });
 
 }
 
@@ -117,50 +121,55 @@ exports.getlikedVideos = async (req, res, next) => {
       select: "username subscribers"
     }
   }).sort("-createdAt");
-  let data = likedVideos.filter(v => checkAccessibility(req, v.VideoId));
+  let data = likedVideos.filter(v => checkAccessibility(req, v.Videoid));
   const receiveddata = [];
   data.forEach(function (v) {
-    v.VideoId.isLiked = v.VideoId.likedBy.toString().indexOf(req.user.id)>-1;
-    v.VideoId.isdisLiked = v.VideoId.dislikedBy.toString().indexOf(req.user.id)>-1;
-    v.VideoId.likedBy=[];
-    v.VideoId.dislikedBy = [];
-    v.VideoId.organiser.subscribers = [];
-    receiveddata.push(v.VideoId);
+    v.Videoid.isLiked = v.Videoid.likedBy.toString().indexOf(req.user.id) > -1;
+    v.Videoid.isdisLiked = v.Videoid.dislikedBy.toString().indexOf(req.user.id) > -1;
+    v.Videoid.likedBy = [];
+    v.Videoid.dislikedBy = [];
+    v.Videoid.organiser.subscribers = [];
+    receiveddata.push(v.Videoid);
   })
 
-  res.status(200).json({ success: true, videos: receiveddata });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, videos: receiveddata });
 
 }
 
 exports.getLiveVideos = async (req, res, next) => {
-  return next({
-    statusCode: 400,
-    message: "Not available"
-  })
+  let lives = await LiveVideo.find({}).populate({
+    path:"organiser",
+    select:"subscribers username cover"
+  }).lean().exec();
+  lives = lives.filter(x=>checkAccessibility(req,x));
+  lives.forEach(function(t){
+    t.url = t.organiser.cover;
+  });
+  res.status(200).json({success:true,lives});
 }
 
 exports.getUser = async (req, res, next) => {
   let user;
-  try{
-   user = await User.findById(req.body.id).select("videos avatar cover subscribers fullname username isAdmin bio website").populate({
-    path: "videos",
-    select: "accessibility url title description visibility",
-    populate: {
-      path: "organiser",
-      select: "subscribers"
-    }
-  }).populate({
-    path:"subscribers",
-    select:"username fullname avatar subscribers"    
-  }).lean()
-  .exec();
-}
-catch(err){
-  return next({
-    statusCode: 404,
-    message: "User not found"
-  })
-}
+  try {
+    user = await User.findById(req.body.id).select("videos avatar cover subscribers fullname username isAdmin bio website").populate({
+      path: "videos",
+      select: "accessibility url title description visibility",
+      populate: {
+        path: "organiser",
+        select: "subscribers"
+      }
+    }).populate({
+      path: "subscribers",
+      select: "username fullname avatar subscribers"
+    }).lean()
+      .exec();
+  }
+  catch (err) {
+    return next({
+      statusCode: 404,
+      message: "User not found"
+    })
+  }
   if (!user) {
     return next({
       statusCode: 404,
@@ -168,29 +177,34 @@ catch(err){
     })
   }
   user.isSubscribed = false;
-  if(req.user.subscribedto.toString().indexOf(user._id.toString())>-1)
+  if (req.user.subscribedto.toString().indexOf(user._id.toString()) > -1)
     user.isSubscribed = true;
   const length = user.subscribers.length;
-  user.subscribersCount =  length;
-  user.subscribers.forEach(s=>{
+  user.subscribersCount = length;
+  user.isAdmin = req.user.isAdmin;
+  user.subscribers.forEach(s => {
     s.isSubscribed = false;
-    if(req.user.subscribedto.toString().indexOf(s._id.toString())>-1)
+    if (req.user.subscribedto.toString().indexOf(s._id.toString()) > -1)
       s.isSubscribed = true;
     s.subscribersCount = s.subscribers.length;
-    s.isMe = s._id.toString()===req.user.id;
+    s.isMe = s._id.toString() === req.user.id;
     //s.subscribers = [];
   })
   user.isMe = false;
-  if(user._id.toString()===req.user.id)
-     user.isMe = true;
+  if (user._id.toString() === req.user.id)
+    user.isMe = true;
   user.videos = user.videos.filter((v) => checkAccessibility(req, v));
-  //console.log("user")
-  console.log("request user",user.subscribers);
-  res.status(200).json({ success: true, user: user});
+  ////console.log("user")
+  //console.log("request user", user.subscribers);
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, user: user });
 
 }
+
 exports.addtoViewedVideo = async (req, res, next) => {
-  const vid = await Video.findById(req.params.vid);
+  const vid = await Video.findOne({_id:req.params.url}).populate({
+    path:"organiser",
+    select:"subscribers"
+  });
   if (!vid || !checkAccessibility(req, vid)) {
     return next({
       statusCode: 400,
@@ -200,10 +214,11 @@ exports.addtoViewedVideo = async (req, res, next) => {
 
   try {
     await User.findByIdAndUpdate(req.user.id, {
-      $pull: { history: req.params.vid }
+      $pull: { history: req.params.url }
     });
+    
     await User.findByIdAndUpdate(req.user.id, {
-      $push: { history: req.params.vid }
+      $push: { history: req.params.url }
     });
   }
   catch (err) {
@@ -212,7 +227,7 @@ exports.addtoViewedVideo = async (req, res, next) => {
       message: "Action failed"
     })
   }
-  res.status(200).json({ success: true });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true });
 }
 exports.removeFromHistory = async (req, res, next) => {
   const vid = await Video.findById(req.params.vid);
@@ -234,28 +249,28 @@ exports.removeFromHistory = async (req, res, next) => {
       message: "Action failed"
     })
   }
-  res.status(200).json({ success: true });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true });
 
 }
 
 exports.searchUser = async (req, res, next) => {
   if (!req.body.term) {
-    return ;
+    return;
   }
-  //console.log(req.user);
+  ////console.log(req.user);
   const regex = new RegExp(req.body.term, "i");
 
   //let users = await User.find({ username: regex});
   User.find({ $or: [{ fullname: regex }, { username: regex }] }).select("username fullname avatar").then((data) => {
-    data = data.filter(function(d){
-      return d.username !=req.user.username;
+    data = data.filter(function (d) {
+      return d.username != req.user.username;
     })
-    res.status(200).json({ success: true, users:data });
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, users: data });
   });
 }
 
 exports.editDetails = async (req, res, next) => {
-  console.log("edit profile",req.body);
+  //console.log("edit profile", req.body);
   const { avatar, username, fullname, website, bio, cover } = req.body;
 
   const fieldsToUpdate = {};
@@ -269,15 +284,15 @@ exports.editDetails = async (req, res, next) => {
     {
       $set: { ...fieldsToUpdate, website, bio },
     },
-    {      
-      new:true,
+    {
+      new: true,
       runValidators: true,
     }
   ).select("avatar cover username fullname bio website");
-  console.log(user);
-  setTimeout(()=>{
-  res.status(200).json({ success: true, user: user });
-},1000)
+  //console.log(user);
+  setTimeout(() => {
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, user: user });
+  }, 1000)
 }
 
 exports.requestotp = async (req, res, next) => {
@@ -293,11 +308,11 @@ exports.requestotp = async (req, res, next) => {
       subject: "OTP for changing password",
       text: "Hello " + req.user.fullname + ",\nhere is the OTP for changing your account password\n" + OTP + "\n\nThis OTP will expire in 2 hours\nThis is a system generated mail.So kindly do not reply.\n\nRegards\n Letstream team",
     }).then(() => {
-      res.status(200).json({ success: true, messsage: "check your email for the OTP" });
+      res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, messsage: "check your email for the OTP" });
     }).catch(err => {
       return next({
-        statusCode: 400,
-        message: err.message
+        statusCode: 500,
+        message: "Email could not be sent.Please retry"
       })
     })
   }
@@ -316,9 +331,9 @@ exports.changePassword = async (req, res, next) => {
       statusCode: 400
     })
   }
-  //////console.log(req.body);
+  ////////console.log(req.body);
   const otpif = await OTPmodel.findOne({ email: req.user.email, type: "changepassword", OTP: otp });
-  //////console.log(req.user.email,otp);  
+  ////////console.log(req.user.email,otp);  
   if (otpif) {
     const user = await User.findOne({ email: req.user.email });
     const tempid = generateOTP(16);
@@ -327,7 +342,7 @@ exports.changePassword = async (req, res, next) => {
     await user.save();
     const token = await user.getJwtToken();
     otpif.remove();
-    res.status(200).json({ success: true, token: token, message: "Password changed successfully" });
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, token: token, message: "Password changed successfully" });
 
   }
   else {
@@ -341,11 +356,14 @@ exports.changePassword = async (req, res, next) => {
 exports.sendNotice = async (req, res, next) => {
 
   if (req.user) {
+    await User.findByIdAndUpdate(req.user.id,{
+      $set:{unseennotice:[]}
+    });
     Notification.find({}).sort({ createdAt: -1 }).then((notices) => {
       notices = notices.filter(function (notice) {
         return notice.receiver.includes(req.user.id) || notice.receiver.includes(req.user.username);
       })
-      res.status(200).json({ success: true, notices });
+      res.status(200).json({ unseennotice:0,success: true, notices });
     })
   }
   else
@@ -375,14 +393,14 @@ exports.subscribe = async (req, res, next) => {
       $pull: { subscribers: req.user.id },
     });
     bool = false;
-    const noti = await Notification.find({Message: `${req.user.username} subscribed to your channel`});
-    if(noti[0]){
-      for(const i of noti[0].receiver)
-        await User.findByIdAndUpdate(i,{
-          $pull:{unseennotice:noti._id}
+    const noti = await Notification.find({ Message: `${req.user.username} subscribed to your channel` });
+    if (noti[0]) {
+      for (const i of noti[0].receiver)
+        await User.findByIdAndUpdate(i, {
+          $pull: { unseennotice: noti[0]._id }
         })
     }
-    for(t of noti){
+    for (t of noti) {
       t.remove();
     }
   }
@@ -392,16 +410,17 @@ exports.subscribe = async (req, res, next) => {
     });
     bool = true;
     const noti = await Notification.create({
-      sender: req.user.id,
+      sender: req.user.username,
       receiver: [req.params.id],
-      avatar:req.user.avatar,
+      avatar: req.user.avatar,
       video: req.user.video,
       type: "subscription",
       url: `/user/${req.user._id}`,
       Message: `${req.user.username} subscribed to your channel`
     })
-    if(!user.unseennotice.includes(noti._id))
-      user.unseennotice.push(noti._id);
+    
+    user.unseennotice.push(noti._id);
+    await user.save();
   }
   const user2 = await User.findById(req.user.id);
   if (user2.subscribedto.includes(req.params.id)) {
@@ -415,11 +434,11 @@ exports.subscribe = async (req, res, next) => {
     });
   }
   const me = await User.findById(req.user.id).populate({
-    path:"subscribedto",
-    select:"username avatar"
+    path: "subscribedto",
+    select: "username avatar"
   });
 
-  res.status(200).json({ success: true, isSubscribed:bool,subscribedto:me.subscribedto });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, isSubscribed: bool, subscribedto: me.subscribedto });
 }
 exports.removeSubscriber = async (req, res, next) => {
 
@@ -445,8 +464,8 @@ exports.removeSubscriber = async (req, res, next) => {
       receiver: [req.user.id],
       type: "subscription"
     }, function (err, res) {
-      if (err){
-        console.log(err, "\ndetected on line 202 controllers/user")
+      if (err) {
+        //console.log(err, "\ndetected on line 202 controllers/user")
       }
     })
   }
@@ -462,24 +481,30 @@ exports.removeSubscriber = async (req, res, next) => {
     });
   }
 
-  res.status(200).json({ success: true, data: {} });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, data: {} });
 }
 exports.savevideo = async (req, res, next) => {
-  const isVideoavailable = await Video.findById(req.params.vid);
+  const isVideoavailable = await Video.findById(req.params.vid).populate({
+    path: "organiser",
+    select: "subscribers"
+  });
   if (!isVideoavailable || !checkAccessibility(req, isVideoavailable)) {
     return next({
       statusCode: 400,
       message: "Action failed"
     })
   }
+  let isSaved = false;
   const issaved = await savedVideo.findOne({ Videoid: req.params.vid, userid: req.user.id });
   if (issaved) {
+    isSaved = false;
     await issaved.remove();
   }
   else {
+    isSaved = true;
     await savedVideo.create({ Videoid: req.params.vid, userid: req.user.id });
   }
-  res.status(200).json({ success: true });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, isSaved: isSaved });
 
 }
 exports.feed = async (req, res, next) => {
@@ -504,12 +529,12 @@ exports.feed = async (req, res, next) => {
     }
 
   })
-  if(req.body.limit){
+  if (req.body.limit) {
     const limit = parseInt(req.body.limit);
     req.user.subscribedto = [];
-    videos = videos.slice(0,limit);
+    videos = videos.slice(0, limit);
   }
-  res.status(200).json({ success: true,subscribedto:req.user.subscribedto, videos });
+  res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, subscribedto: req.user.subscribedto, videos });
 
 }
 
@@ -526,8 +551,8 @@ exports.feed = async (req, res, next) => {
         body: fd
     })
     .then(res => res.json())
-    .then(json => //console.log(json))
-    .catch(err => //console.error(err));
+    .then(json => ////console.log(json))
+    .catch(err => ////console.error(err));
 }
 
 */
@@ -540,7 +565,7 @@ exports.uploadVideo = async (req, res, next) => {
   try {
     //Use the name of the input field (i.e. "video") to retrieve the uploaded file
     const { url, title, description, keywords } = req.body;
-    //console.log(req.body);
+    ////console.log(req.body);
     //const name = generateOTP(6)+"_"+title;
     const video2 = await Video.create({
       description: description,
@@ -561,10 +586,10 @@ exports.uploadVideo = async (req, res, next) => {
     const notice = await Notification.create({
       sender: req.user.username,
       receiver: req.body.visibility == "custom" ? req.body.accessibility : req.user.subscribers,
-      Message: req.body.visibility == "custom" ? `${req.user.fullname}(channel-${req.user.username}) has uploaded a private video` : `Your channel ${req.user.username} uploaded a video ${req.body.title}|${req.body.description}`,
+      Message: req.body.visibility == "custom" ? `${req.user.fullname}(channel-${req.user.username}) has uploaded a private video` : `Your channel ${req.user.username} uploaded a video ${req.body.title} | ${req.body.description}`,
       type: "videoupload",
       VideoId: video2._id,
-      url: "/video/"+video2._id,
+      url: "/video/" + video2._id,
       avatar: req.user.avatar
     })
 
@@ -587,12 +612,72 @@ exports.uploadVideo = async (req, res, next) => {
     //         size: video.size
     //     }
     // });
-    res.status(200).json({ success: true });
+    res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true });
 
   } catch (err) {
-    //console.log(err);
+    ////console.log(err);
     res.status(500).send(err);
   }
 
 
+}
+
+exports.createLiveStream = async(req,res,next)=>{
+  const {title,description,visibility,accessibility} = req.body;
+  const organiser = await User.findById(req.user.id);
+  
+  if(!title.trim()||!description.trim()||!visibility){
+    return next({
+      statusCode:400,
+      message:"Please fill in all fields"
+    })
+  }
+  if(!accessibility){
+    accessibility = [];
+    //allowing blank accessibility field in case someone wants to use
+    // it for testing purpose only...i.e not allowing others to join livestream
+    //...only organiser can join with different devices
+  }
+  const roomid = generateOTP(12);//generating roomid of length 12
+  await LiveVideo.create({
+    title,
+    description,
+    visibility,
+    roomid,
+    accessibility,
+    organiser:organiser._id
+  });
+  
+  res.status(200).json({success:true,url:"/livestreaming/"+roomid})
+
+}
+
+exports.getLiveInfo = async(req,res,next)=>{
+  const roomid = req.params.roomid;
+  const live = await LiveVideo.findOne({roomid:roomid}).populate({
+    path:"organiser",
+    select:"subscribers fullname avatar"
+  });
+  if(!live){
+    return next({
+      statusCode:400,
+      message:"Invalid link"
+    })
+  }
+  if(!checkAccessibility(req,live)){
+    return next({
+      statusCode:401,      
+      message:"You are not allowed to join this live event"
+    })
+  }
+  const data = {};
+  data.organiser = live.organiser.fullname;
+  data.avatar = live.organiser.avatar;
+  data.description = live.description;
+  data.visibility = live.visibility;
+  data.title = live.title;
+  data.total = live.participants.length;
+  //only one instance can share their camera and mic
+  data.isOrganiser = (req.user.id==live.organiser._id.toString())&&live.participants.toString().indexOf(live.organiser._id.toString())==-1;
+  res.json({success:true,data})
 }

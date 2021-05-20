@@ -25,6 +25,8 @@ import Notifications from './pages/Notifications';
 import { ThemeContext } from "./utils/ThemeContext";
 import Channel from "./pages/channel";
 import VideoPlayer from "./components/VideoPlayer/VideoPlayer";
+import Broadcast from "./pages/Broadcast";
+import Broadcastroom from "./pages/Broadcastroom";
 
 function App() {
   let isAuthenticated = localStorage.getItem("user");
@@ -45,7 +47,9 @@ function App() {
           <Route path="/user/savedvideos" component={SavedVideos}></Route>
           <Route path="/user/notifications" component={Notifications}></Route>
           <Route path="/user/likedvideos" component={LikedVideos}></Route>
+          <Route path="/user/startlive" component={Broadcast}></Route>
           <Route path="/user/history" component={History}></Route>
+          <Route path="/livestreaming/:roomid" component={()=><Broadcastroom key={window.location.pathname}/>}></Route>
           <Route path="/user/suggestions" component={Suggestions}></Route>
           <Route path="/user/livevideos" component={LiveVideos}></Route>
           <Route path="/user/:userId" component={()=><Channel key={window.location.pathname}/>}></Route>

@@ -25,6 +25,7 @@
 }
 .videoinfo_item{
     padding-right:20px;
+    cursor: pointer;
 }
 
 .videoinfo_likes, .videoinfo_channel > div {

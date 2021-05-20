@@ -35,16 +35,16 @@ const LiveVideos = () => {
     const [Videos, setVideos] = useState([]);
     React.useEffect(() => {
         Connect("/user/livevideos", { method: "POST" }).then(data => {
-            setVideos(data.videos);
-            if (data.videos.length === 0) {
-                setErr({ title: "No videos found", text: "There is nothing to show here" });
+            setVideos(data.lives);
+            if (data.lives.length === 0) {
+                setErr({ title: "No live event found", text: "There is nothing to show here" });
             }
             setisLoading(false);
         }).catch(err => {
             setErr({ text: err.message, title: "Error in loading page" });
             setisLoading(false);
         })
-    }, [Videos])
+    }, [])
     if (error.text) {
         return (
             <>
@@ -64,20 +64,17 @@ const LiveVideos = () => {
             <Wrapper>
                 {!isLoading ? <div className="live">
                     <h3>Live videos</h3>
-                    {Videos.map((item) => <Link key={item._id} to={`/video/${item._id}`}>
+                    {Videos.map((item) => <Link key={item._id} to={`/livestreaming/${item.roomid}`}>
                         <VideoCard2
                             title={item.title}
                             _id={item._id}
                             description={item.description}
-                            visibility={item.visibility}
-                            likesCount={item.likesCount}
-                            dislikesCount={item.dislikesCount}
-                            isLiked={item.isLiked}
-                            isdisLiked={item.isdisLiked}
+                            visibility={item.visibility}                            
                             url={item.url}
-                            views={item.views}
+                            views={item.participants.length}
                             timestamp={item.createdAt}
                             channel={item.organiser.username}
+                            live={true}
                         />
                     </Link>)}
                 </div> : <Loader />}

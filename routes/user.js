@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { uploadVideo,editDetails,changePassword,requestotp,feed,sendNotice,subscribe,removeSubscriber ,searchUser,getUser,savevideo, addtoViewedVideo,getHistory,getSuggestions,getMyVideos,
-getsavedVideos,getLiveVideos,getlikedVideos} = require("../controllers/user");
+getsavedVideos,getLiveVideos,getlikedVideos, removeFromHistory, createLiveStream,getLiveInfo} = require("../controllers/user");
 
 const { Verify } = require("../middleware/auth");
 
@@ -20,10 +20,14 @@ router.route("/livevideos").post(Verify,getLiveVideos);
 router.route("/feed").post(Verify, feed);
 
 router.route("/uploadvideo").post(Verify,uploadVideo);//if it's not live streaming
+router.route("/createlivestream").post(Verify,createLiveStream);
+router.route("/getstreaminfo/:roomid").get(Verify,getLiveInfo);
 router.route("/getuserbyid").post(Verify, getUser);
 router.route("/subscribe/:id").post(Verify,subscribe);
-router.route("/savevideo/:vid").post(Verify,savevideo);
-router.route("/addtoview/:vid").post(Verify,addtoViewedVideo);
+router.route("/savevideo/:vid").get(Verify,savevideo);
+router.route("/addtohistory/:url").get(Verify,addtoViewedVideo);
+router.route("/removefromhistory/:vid").delete(Verify,removeFromHistory);
+
 router.route("/removesubscriber/:id").post(Verify,removeSubscriber);
 router.route("/search").post(Verify,searchUser);
 

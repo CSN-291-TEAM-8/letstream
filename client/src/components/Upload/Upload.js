@@ -55,7 +55,7 @@ const VideoForm = () => {
         InputEvent(e);
         if(!e.target.value){
             return;
-        }
+        } 
         Connect("/user/search",{body:{term:e.target.value}}).then((d)=>{
             setUsers(d.users);
         }).catch(err=>{
