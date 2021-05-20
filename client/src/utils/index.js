@@ -152,7 +152,7 @@ export const uploadImage = async ({ username }, file) => {
     };
 
     const {data} = await axios.post(//
-        `${process.env.REACT_APP_UPLOAD_MEDIA_URI}/image/upload`,
+        `https://api.cloudinary.com/v1_1/dt4pc7skl/image/upload`,
         fdata,
         config
     );
@@ -187,7 +187,7 @@ export const uploadMediaFile = async (filetype, file) => {
     };
 
     const {data} = await axios.post(//
-        `${process.env.REACT_APP_UPLOAD_MEDIA_URI}/${filetype}/upload`,
+        `https://api.cloudinary.com/v1_1/dt4pc7skl/${filetype}/upload`,
         fdata,
         config
     );
