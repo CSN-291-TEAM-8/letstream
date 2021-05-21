@@ -131,7 +131,7 @@ const Broadcast = ()=>{
         }
         setJoinLoad(true);
         Connect("/user/createlivestream",{body:Stream}).then(d=>{
-            history.replace(d.url);
+            window.open(d.url);
             setJoinLoad(false);
         }).catch(err=>{
             setJoinLoad(false);

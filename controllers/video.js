@@ -143,6 +143,7 @@ exports.sendvideoinfo = async (req, res, next) => {
     });
     v.dislikesCount = v.dislikedBy.length;
     v.likesCount = v.likedBy.length;
+    v.views = v.viewedby.length;
     v.viewedby = [];
     //console.log("video", v);
     res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, video: v });
@@ -153,6 +154,7 @@ exports.deletevideo = async (req, res, next) => {
     if (video.organiser == req.user.id) {
         await video.remove();
         res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, message: "Video deleted successfully" });
+        
     }
     else {
         return next({
@@ -211,7 +213,9 @@ exports.Highlight = async (req, res, next) => {
     let accessibleones = highlightedvideos.filter(function (v) {
         return checkAccessibility(req, v);
     });
-    accessibleones.forEach(function (v) { v.isLiked = v.likedBy.toString().includes(req.user.id), v.isdisLiked = v.dislikedBy.toString().includes(req.user.id), v.likedBy = [], v.dislikedBy = [], v.organiser.subscribers = [] })
+    accessibleones.forEach(function (v) {v.dislikesCount = v.dislikedBy.length,
+        v.likesCount = v.likedBy.length,
+        v.views = v.viewedby.length, v.isLiked = v.likedBy.toString().includes(req.user.id), v.isdisLiked = v.dislikedBy.toString().includes(req.user.id), v.likedBy = [], v.dislikedBy = [], v.organiser.subscribers = [] })
 
     res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, videos: accessibleones });
 
@@ -239,9 +243,10 @@ exports.toggleLike = async (req, res, next) => {
         if(err) console.log(err)
     })
     let isLiked = false;
-    if (v.likedBy.indexOf(req.user.id) > -1) {
-        v.likesCount = v.likesCount - 1;
-        v.likedBy.splice(v.likedBy.indexOf(req.user.id), 1);
+    const idex = v.likedBy.indexOf(req.user.id);
+    if (idex > -1) {
+        v.likesCount = v.likesCount - 1;        
+        v.likedBy.splice(idex, 1);
         await likedVideo.findOneAndDelete({ userid: req.user.id, Videoid: v._id }, (err, res) => {
             if (err) {
                 return next({
@@ -269,8 +274,9 @@ exports.toggleLike = async (req, res, next) => {
         v.likesCount = v.likesCount + 1;
         await likedVideo.create({ userid: req.user.id, Videoid: v._id })
     }
-    if (v.dislikedBy.includes(req.user.id)) {
-        v.dislikedBy.splice(v.dislikedBy.indexOf(req.user.id), 1);
+    const idex2 = v.dislikedBy.indexOf(req.user.id);
+    if (idex2>-1) {
+        v.dislikedBy.splice(idex2, 1);
         v.dislikesCount = v.dislikesCount - 1;
     }
     await v.save();
@@ -298,17 +304,19 @@ exports.toggledislike = async (req, res, next) => {
         })
     }
     let isdisLiked = false;
-    if (v.dislikedBy.indexOf(req.user.id) > -1) {
+    const idex = v.dislikedBy.indexOf(req.user.id);
+    if (idex > -1) {
         v.dislikesCount = v.dislikesCount - 1;
-        v.dislikedBy.splice(v.dislikedBy.indexOf(req.user.id), 1);
+        v.dislikedBy.splice(idex, 1);
     }
     else {
         isdisLiked = true;
         v.dislikedBy.push(req.user.id);
         v.dislikesCount = v.dislikesCount + 1;
     }
-    if (v.likedBy.includes(req.user.id)) {
-        v.likedBy.splice(v.likedBy.indexOf(req.user.id), 1);
+    const idex2 = v.likedBy.indexOf(req.user.id);
+    if (idex2>-1) {
+        v.likedBy.splice(idex2, 1);
         v.likesCount = v.likesCount - 1;
         await likedVideo.findOneAndDelete({ userid: req.user.id, Videoid: v._id }, (err, res) => {
             ////console.log(err,"\n err on line 187 of controllers/video")
@@ -351,6 +359,19 @@ exports.addComment = async (req, res, next) => {
     if (req.body.Repliedto) {
         await Notification.create({ receiver: [req.body.Repliedto], url: `/video/${video._id}/?commentId=${comment._id}`, VideoId: video._id, commentId: rcomment && rcomment._id, sender: req.user.username, avatar: req.user.avatar, Message: `${req.user.fullname} replied to your comment in the video ${video.title} by ${video.organiser.username}`, type: "replytocomment" });
     }
+    if(req.user.id!=video.organiser._id.toString()){
+    const noti = await Notification.create({
+        receiver:[video.organiser._id],
+        sender:req.user.username,
+        commentId:comment._id,
+        Message:"Someone commented on your video "+video.title,
+        type:"commentvideo",
+        url:`/video/${video._id}`,
+    })
+    await User.findByIdAndUpdate(video.organiser._id,{
+        $push:{unseennotice:noti._id}
+    })
+}
     video.comments.push(comment._id);
     await video.save();
     comment = await comment
@@ -446,6 +467,7 @@ exports.reportVideo = async (req, res, next) => {
     for (x of admin) {
         adminid.push(x._id);
     }
+    await Notification.deleteMany({sender:"system"},(err,res)=>{})
     if (admin) {
         await Notification.create({
             Message: "Hello admin,\nUsers of letstream are reporting the video by " + video.organiser.fullname + "\nKindly,take the suitable action against it.\nTotal reports filled have reached " + video.reportCount,
@@ -483,7 +505,9 @@ exports.searchVideo = async (req, res, next) => {
     }
     //   ////console.log(Videos);
     Videos = Videos.filter((V, pos) => { return this.checkAccessibility(req, V) });
-    Videos.forEach(v => { v.isLiked = v.likedBy.toString().includes(req.user.id), v.isdisLiked = v.dislikedBy.toString().includes(req.user.id), v.likedBy = [], v.dislikedBy = [], v.organiser.subscribers = [] })
+    Videos.forEach(v => { v.isLiked = v.likedBy.toString().includes(req.user.id), v.isdisLiked = v.dislikedBy.toString().includes(req.user.id),v.dislikesCount = v.dislikedBy.length,
+        v.likesCount = v.likedBy.length,
+        v.views = v.viewedby.length,v.viewedby=[], v.likedBy = [], v.dislikedBy = [], v.organiser.subscribers = [] })
     res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, videos: Videos });
 }
 
@@ -495,7 +519,7 @@ exports.likecomment = async (req, res, next) => {
             message: "Invalid request"
         });
     }
-
+    console.log(c);
     const v = await Video.findById(c.Video).populate({
         path:"organiser",
         select:"subscribers"
@@ -514,14 +538,17 @@ exports.likecomment = async (req, res, next) => {
     }
     let isliked = false;
     let commentowner = await User.findById(c.user);
-    if (c.likedBy.toString().indexOf(req.user.id) > -1) {
+    const idex = c.likedBy.indexOf(req.user.id);
+    console.log(idex);
+    if (idex > -1) {
         c.likesCount = c.likesCount - 1;
-        c.likedBy.splice(c.likedBy.indexOf(req.user.id), 1);
+        c.likedBy.splice(idex, 1);
         const noti = await Notification.findOne({type:"likecomment",commentId:c._id,sender:req.user.username});
-        
-        const index = commentowner.unseennotice.indexOf(noti._id)
-        if(index > -1){
-            commentowner.unseennotice.splice(index,1);
+        if(noti){
+            const index = commentowner.unseennotice.indexOf(noti._id)
+            if(index > -1){
+                commentowner.unseennotice.splice(index,1);                
+            }
             await commentowner.save();
             await noti.remove();
         }
@@ -547,8 +574,9 @@ exports.likecomment = async (req, res, next) => {
         c.likesCount = c.likesCount + 1;
         isliked = true;
     }
-    if (c.dislikedBy.includes(req.user.id)) {
-        c.dislikedBy.splice(c.dislikedBy.indexOf(req.user.id), 1);
+    const idex2 = c.dislikedBy.indexOf(req.user.id);
+    if (idex2>-1) {
+        c.dislikedBy.splice(idex2, 1);
         c.dislikesCount = c.dislikesCount - 1;
 
     }
@@ -586,15 +614,18 @@ exports.dislikecomment = async (req, res, next) => {
     let disliked = false;
     const noti = await Notification.findOne({type:"likecomment",commentId:c._id,sender:req.user.username});
     const commentowner = await User.findById(c.user);
-    const index = commentowner.unseennotice.indexOf(noti._id)
-    if(index > -1){
-        commentowner.unseennotice.splice(index,1);
+    if(noti){
+        const index = commentowner.unseennotice.indexOf(noti._id)
+        if(index > -1){
+            commentowner.unseennotice.splice(index,1);            
+        }
         await commentowner.save();
         await noti.remove();
-    }
-    if (c.dislikedBy.indexOf(req.user.id) > -1) {
+}
+    const idex = c.dislikedBy.indexOf(req.user.id);
+    if (idex > -1) {
         
-        c.dislikedBy.splice(c.dislikedBy.indexOf(req.user.id), 1);
+        c.dislikedBy.splice(idex, 1);
         c.dislikesCount = c.dislikedBy.length;
     }
     else {
@@ -602,8 +633,9 @@ exports.dislikecomment = async (req, res, next) => {
         c.dislikesCount = c.dislikedBy.length;
         disliked = true;
     }
-    if (c.likedBy.includes(req.user.id)) {
-        c.likedBy.splice(c.likedBy.indexOf(req.user.id), 1);       
+    const idex2 = c.likedBy.indexOf(req.user.id);
+    if (idex2>-1) {
+        c.likedBy.splice(idex2, 1);       
         c.likesCount = c.likedBy.length;
     }
     c.dislikesCount = c.dislikedBy.length;

@@ -12,7 +12,7 @@ const LiveVideo = require("../models/LiveVideo");
 exports.getHistory = async (req, res, next) => {
   const user = await User.findById(req.user.id).populate({
     path: "history",
-    select: "accessibility url title createdAt description visibility views likedBy dislikedBy likesCount dislikesCount",
+    select: "accessibility url title createdAt description visibility views viewedby likedBy dislikedBy likesCount dislikesCount",
     populate: {
       path: "organiser",
       select: "username subscribers",
@@ -27,7 +27,9 @@ exports.getHistory = async (req, res, next) => {
   }
   //console.log("history",user.history);
   user.history = user.history.filter((v) => checkAccessibility(req, v)).reverse();
-  user.history.forEach(function (v) { v.isLiked = v.likedBy.toString().indexOf(req.user.id) > -1, v.isdisLiked = v.dislikedBy.toString().indexOf(req.user.id) > -1, v.likedBy = [], v.dislikedBy = [], v.organiser.subscribers = [] });
+  user.history.forEach(function (v) { v.isLiked = v.likedBy.toString().indexOf(req.user.id) > -1, v.isdisLiked = v.dislikedBy.toString().indexOf(req.user.id) > -1, v.dislikesCount = v.dislikedBy.length,
+    v.likesCount = v.likedBy.length,
+    v.views = v.viewedby.length,v.viewedby=[],v.likedBy = [], v.dislikedBy = [], v.organiser.subscribers = [] });
   //user.history = user.history.map(v => v.organiser.subscribers = []);
   res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, videos: user.history });
 
@@ -65,7 +67,7 @@ exports.getSuggestions = async (req, res, next) => {
 exports.getMyVideos = async (req, res, next) => {
   const user = await User.findById(req.user.id).populate({
     path: "videos",
-    select: "url title createdAt description visibility views likedBy dislikedBy likesCount dislikesCount",
+    select: "url title createdAt description visibility views viewedby likedBy dislikedBy likesCount dislikesCount",
     populate: {
       path: "organiser",
       select: "username",
@@ -79,7 +81,10 @@ exports.getMyVideos = async (req, res, next) => {
     })
   }
   user.videos = user.videos.reverse();
-  user.videos.forEach(function (v) { v.isLiked = v.likedBy.toString().indexOf(req.user.id) > -1, v.isdisLiked = v.dislikedBy.toString().indexOf(req.user.id) > -1, v.likedBy = [], v.dislikedBy = [] });
+  user.videos.forEach(function (v) { v.isLiked = v.likedBy.toString().indexOf(req.user.id) > -1, v.isdisLiked = v.dislikedBy.toString().indexOf(req.user.id) > -1, 
+    v.dislikesCount = v.dislikedBy.length,
+    v.likesCount = v.likedBy.length,
+    v.views = v.viewedby.length,v.viewedby=[],v.likedBy = [], v.dislikedBy = [] });
   res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, videos: user.videos });
 
 }
@@ -88,7 +93,7 @@ exports.getsavedVideos = async (req, res, next) => {
   const userv = await User.findById(req.user.id);
   const savedVideos = await savedVideo.find({ userid: userv._id }).populate({
     path: "Videoid",
-    select: "url title description createdAt visibility views accessibility likedBy dislikedBy likesCount dislikesCount",
+    select: "url title description createdAt visibility views viewedby accessibility likedBy dislikedBy likesCount dislikesCount",
     populate: {
       path: "organiser",
       select: "username subscribers"
@@ -100,9 +105,13 @@ exports.getsavedVideos = async (req, res, next) => {
   data.forEach(function (v) {
     v.Videoid.isLiked = (v.Videoid.likedBy.toString().indexOf(req.user.id) > -1);
     v.Videoid.isdisLiked = (v.Videoid.dislikedBy.toString().indexOf(req.user.id) > -1);
+    v.Videoid.dislikesCount = v.Videoid.dislikedBy.length;
+    v.Videoid.likesCount = v.Videoid.likedBy.length;
+    v.Videoid.views = v.Videoid.viewedby.length;
     v.Videoid.likedBy = [];
+    v.Videoid.viewedby = [];
     v.Videoid.dislikedBy = [];
-    v.Videoid.organiser.subscribers = []
+    v.Videoid.organiser.subscribers = [];
     receiveddata.push(v.Videoid);
   })
 
@@ -115,7 +124,7 @@ exports.getlikedVideos = async (req, res, next) => {
   const userv = await User.findById(req.user._id);
   const likedVideos = await likedVideo.find({ userid: userv._id }).populate({
     path: "Videoid",
-    select: "url title description createdAt visibility views accessibility likedBy dislikedBy likesCount dislikesCount",
+    select: "url title description createdAt visibility views viewedby accessibility likedBy dislikedBy likesCount dislikesCount",
     populate: {
       path: "organiser",
       select: "username subscribers"
@@ -126,7 +135,11 @@ exports.getlikedVideos = async (req, res, next) => {
   data.forEach(function (v) {
     v.Videoid.isLiked = v.Videoid.likedBy.toString().indexOf(req.user.id) > -1;
     v.Videoid.isdisLiked = v.Videoid.dislikedBy.toString().indexOf(req.user.id) > -1;
+    v.Videoid.dislikesCount = v.Videoid.dislikedBy.length;
+    v.Videoid.likesCount = v.Videoid.likedBy.length;
+    v.Videoid.views = v.Videoid.viewedby.length;
     v.Videoid.likedBy = [];
+    v.Videoid.viewedby=[];
     v.Videoid.dislikedBy = [];
     v.Videoid.organiser.subscribers = [];
     receiveddata.push(v.Videoid);
@@ -520,6 +533,10 @@ exports.feed = async (req, res, next) => {
   videos.forEach(async function (v) {
     v.isLiked = v.likedBy.includes(req.user.id);
     v.organiser.subscriber = [];
+    v.dislikesCount = v.dislikedBy.length;
+    v.likesCount = v.likedBy.length;
+    v.views = v.viewedby.length;
+    v.viewedby=[];
     const isSaved = await savedVideo.findOne({ userid: req.user.id, Videoid: v._id });
     if (isSaved) {
       v.isSaved = true
@@ -594,7 +611,7 @@ exports.uploadVideo = async (req, res, next) => {
     })
 
     for (const i of notice.receiver) {
-      User.findByIdAndUpdate(i, {
+      await User.findByIdAndUpdate(i, {
         $push: { unseennotice: notice._id }
       })
     }
@@ -660,7 +677,7 @@ exports.createLiveStream = async(req,res,next)=>{
 
   for (const i of notice.receiver) {
     console.log("noti receiver",notice.receiver);
-    User.findByIdAndUpdate(i, {
+    await User.findByIdAndUpdate(i, {
       $push: { unseennotice: notice._id }
     })
   }

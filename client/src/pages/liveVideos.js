@@ -64,7 +64,7 @@ const LiveVideos = () => {
             <Wrapper>
                 {!isLoading ? <div className="live">
                     <h3>Live videos</h3>
-                    {Videos.map((item) => <Link key={item._id} to={`/livestreaming/${item.roomid}`}>
+                    {Videos.map((item) => <div onClick={()=>window.open(`/livestreaming/${item.roomid}`)} key={item._id} >
                         <VideoCard2
                             title={item.title}
                             _id={item._id}
@@ -76,7 +76,7 @@ const LiveVideos = () => {
                             channel={item.organiser.username}
                             live={true}
                         />
-                    </Link>)}
+                    </div>)}
                 </div> : <Loader />}
             </Wrapper>
         </>

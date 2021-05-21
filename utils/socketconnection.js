@@ -53,6 +53,7 @@ exports.startSocket = async function (server) {
       }
     };
     //clearSocketId();
+
     //clearParticipants();
     const checkAccessibility2 = (req,video)=>{
       const organiser = video.organiser;
@@ -78,7 +79,7 @@ exports.startSocket = async function (server) {
       console.log("Ending event...");
       await live.remove();
       await Notification.deleteMany({url:"/livestreaming/"+live.roomid},(err,res)=>{});
-      io.to(socket.liveroomid).emit("meetingended");
+      io.to(socket.liveroomid).emit("meetingended",socket.liveroomid);
     });
     socket.on("joinliveroom", async function(room){
       if(socket.liveroomid){

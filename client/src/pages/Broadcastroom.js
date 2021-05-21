@@ -365,13 +365,13 @@ const Broadcastroom = () => {
                     Socket.emit("candidate", id, Socket.id, event.candidate);
                 }
             };
-            setTimeout(async () => {
+            
                 await window.peerConnection.setRemoteDescription(new RTCSessionDescription(description)); await window.peerConnection.createAnswer().then(async function (sdp) {
                     await window.peerConnection.setLocalDescription(new RTCSessionDescription(sdp));
                     Socket.emit("answer", id, Socket.id, sdp);
                 });
                 console.log("offer to watcher");
-            }, 1000)
+            
 
 
             // window.peerConnection.addTrack(null,null);
@@ -404,7 +404,7 @@ const Broadcastroom = () => {
                 console.log("Track event called for watcher");
             }
             peerConnection.oniceconnectionstatechange = async function () {
-                if (peerConnection.iceConnectionState === "disconnected" || peerConnection.iceConnectionState === "failed")
+                if (peerConnection.iceConnectionState === "disconnected" || peerConnection.iceConnectionState === "failed"){
                   console.log(peerConnection.iceConnectionState);
                     await peerConnection
                         .createOffer({ iceRestart: true })
@@ -412,6 +412,7 @@ const Broadcastroom = () => {
                             await peerConnection.setLocalDescription(new RTCSessionDescription(sdp));
                             Socket.emit("offer", id, Socket.id, sdp);
                         }).catch(e => console.log(e));
+                    }
 
             }
             peerConnection.onicecandidate = event => {
@@ -437,12 +438,21 @@ const Broadcastroom = () => {
         });
 
         Socket.on("candidate", function (id, me, candidate) {
+            try{
             if (window.isOrganiser) {
                 window.peerConnections[id].addIceCandidate(new RTCIceCandidate(candidate));
             }
             else {
                 window.peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
             }
+        }
+        catch(e){
+            if(!window.ice_error){
+                toast.error("Something went wrong");
+                window.ice_error = true;
+                window.location.reload();
+            }
+        }
         });
 
         
