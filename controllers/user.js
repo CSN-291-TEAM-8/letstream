@@ -99,7 +99,7 @@ exports.getsavedVideos = async (req, res, next) => {
       select: "username subscribers"
     }
   }).sort("-createdAt").lean().exec();
-  //console.log("savedvideo", JSON.stringify(savedVideos));
+  console.log("savedvideo", JSON.stringify(savedVideos));
   let data = savedVideos.filter(v => checkAccessibility(req, v.Videoid));
   const receiveddata = [];
   data.forEach(function (v) {

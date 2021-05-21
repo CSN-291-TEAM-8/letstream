@@ -56,6 +56,9 @@ exports.startSocket = async function (server) {
 
     //clearParticipants();
     const checkAccessibility2 = (req,video)=>{
+      if(!video||!video.organiser){
+        return false;
+    }
       const organiser = video.organiser;
       //console.log(organiser);
       return video.visibility == "public" || video.organiser._id.toString() == req.user.id.toString() || (video.visibility == "sub-only" && organiser.subscribers.toString().indexOf(req.user.id.toString()) > -1)

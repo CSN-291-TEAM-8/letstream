@@ -13,6 +13,8 @@
 
 .header_logo {
     height: 25px;
+    transform: scale(1.8);
+    padding-left:20px;
     object-fit: contain;
     margin-left: 10px;
 }

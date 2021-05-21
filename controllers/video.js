@@ -14,13 +14,16 @@ const savedVideo = require("../models/savedVideo");
 const io = IO();
 
 exports.checkAccessibility = (req, video) => {
-    //console.log("video check",video);
+    console.log("video check",video);
+    if(!video||!video.organiser){
+        return false;
+    }
     const organiser = video.organiser;
-    console.log("organiser",organiser);
+    //console.log("organiser",organiser);
     //video.presenters.toString().indexOf(req.user.id.toString())>-1||
     return req.user.isAdmin||video.visibility == "public" || video.organiser._id.toString() == req.user.id.toString() ||
-        (video.visibility == "sub-only" && organiser.subscribers.toString().indexOf(req.user.id.toString()) > -1)
-        || (video.visibility == "custom" && video.accessibility.indexOf(req.user.id.toString()) > -1)
+        (video.visibility == "sub-only" && organiser && organiser.subscribers.toString().indexOf(req.user.id.toString()) > -1)
+        || (video.visibility == "custom" && video.accessibility&&video.accessibility.indexOf(req.user.id.toString()) > -1)
 }
 
 
@@ -205,6 +208,9 @@ exports.Highlight = async (req, res, next) => {
     })
     const checkAccessibility = function (req, video) {
         //////console.log("check video",video);
+        if(!video||!video.organiser){
+            return false;
+        }
         const organiser = video.organiser;
         ////console.log(organiser);
         return video.visibility == "public" || video.organiser._id.toString() == req.user.id.toString() || video.presenters.indexOf(req.user.id) > -1 ||
