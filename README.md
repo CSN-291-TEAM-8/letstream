@@ -7,10 +7,12 @@ A streaming application made with mern stack
 
 * Node installed (>= v12.16.1)
 * npm installed (>= 6.14.7)
+* (optional) MongoDB server version (>=3.6.8)
 
 ## Testing environment
 
 Testing of this application was done in an environment with node version `12.16.1` and npm version `6.14.7`
+For testing with local mongodb,switch to `MONGOURI` in <a href="/utils/db.config.js">db.config.js</a>
 
 ### Clone the repo
 
@@ -45,7 +47,7 @@ JWT_SECRET="<ANY_STRING>"
 EMAIL="<ADD_YOUR_NEW_EMAIL_ID>" //Add the email which will send OTP to other email
 EMAIL_PASS="<ADD_PASSWORD>" //Add your email password
 JWT_EXPIRE=30d  // you can add whatever you wish
-MONGOURI2=<YOUR_MONGO_URI>" //mongouri when used for production
+MONGOURI2="<YOUR_MONGO_URI>" //mongouri when used for production
 MONGOURI="mongodb://localhost:27017/letstream" //mongouri for local development
 ADMIN_EMAIL="<The admin email>" //This is for notifying admin if a large number of users are reporting a video
 ```
