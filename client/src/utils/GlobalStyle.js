@@ -84,7 +84,7 @@ const GlobalStyle = createGlobalStyle`
 	}
 	*{
 		scrollbar-color: #555555 #898B8C;
-		scroll-behaviour:smooth;
+		scroll-behavior: smooth;
 	}
 	.notification-badge {
 	top: 3px;

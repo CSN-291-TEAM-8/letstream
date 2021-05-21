@@ -50,7 +50,7 @@ const Broadcastroomwrapper = styled.div`
     }
     .roundbtn {
         padding: 10px;
-        background: #535151;
+        background: rgb(36,36,36);
         border-radius: 100%;
         display: flex;
     }
@@ -250,20 +250,29 @@ const Broadcastroom = () => {
     };
 
     const { Socket, setSocket } = React.useContext(SocketContext);
-    const [disconnected, setDisconnected] = useState(false);
+    const [disconnected, setDisconnected] = useState(null);
     const [chats, setChats] = useState([]);
     const [meetended, setMeetingended] = useState(false);
 
     const makeSocketConnection = () => {
         const token = localStorage.getItem("accesstoken");
         if (token) {
-            if (Socket.connected)
+            if (Socket.connected||disconnected===true)
                 return;
-            Socket.connect();
-            setTimeout(makeSocketConnection, 1000);
+            if(disconnected===null)
+                Socket.connect();
+            else{
+                Socket.reconnect();
+            }
+
+           // setTimeout(makeSocketConnection, 1000);
             Socket.on("connect", () => {
-                console.log("socket connect() fired");
-                setSocket(Socket);
+                if(disconnected){
+                    console.log("socket connect() fired");
+                    setSocket(Socket);
+                    //setTimeout(() => Socket.emit("joinliveroom", roomid), 3000);
+                    setDisconnected(false);
+                }
                 //Socket.emit("joinliveroom",roomid);             
                 // toast.success("Socket connected");
             })
@@ -271,7 +280,7 @@ const Broadcastroom = () => {
                 setSocket(Socket);
                 console.log("socket reconnect() fired");
                 disconnected && setTimeout(() => Socket.emit("joinliveroom", roomid), 1000);
-                setDisconnected(false);
+                
             })
             Socket.on('errmsg', function (err) {
                 setCall(false);
@@ -285,6 +294,7 @@ const Broadcastroom = () => {
             Socket.on('disconnect', () => {
                 //setSocket(null); 
                 setDisconnected(true);
+                
                 console.log("socket disconnect() fired");
                 setTimeout(makeSocketConnection, 1000);
             })
@@ -293,8 +303,15 @@ const Broadcastroom = () => {
     };
 
     const submitMsg = (e) => {
+        Socket.emit("joinliveroom",roomid);
+        if(Socket.disconnected){            
+            console.log("reconnecting...");
+            Socket.connect();            
+            return;
+        }
         if (e.keyCode === 13) {
             setMyMsg("");
+            document.getElementById("bottom")&&document.getElementById("bottom").scrollIntoView({behaviour:"smooth"});
             console.log("emitting chat...");
             Socket.emit("chat", mymsg);
         }
@@ -388,6 +405,7 @@ const Broadcastroom = () => {
             }
             peerConnection.oniceconnectionstatechange = async function () {
                 if (peerConnection.iceConnectionState === "disconnected" || peerConnection.iceConnectionState === "failed")
+                  console.log(peerConnection.iceConnectionState);
                     await peerConnection
                         .createOffer({ iceRestart: true })
                         .then(async function (sdp) {
@@ -432,16 +450,33 @@ const Broadcastroom = () => {
             setMeetingended(true);
         })
         return () => {
-            Socket.close();
+            Socket.off("meetingended");
+            Socket.off("candidate");
+            Socket.off("answer");
+            Socket.off("watcher");
+            Socket.off("broadcaster");
+            Socket.off("disconnectPeer");
+            Socket.off("offer");
+
         }
-    }, [])
+    }, []);
+    const scrollToBottom = ()=>{
+        setTimeout(()=>{
+        const b = document.getElementById("bottom");
+        console.log(b.offsetParent.scrollHeight - b.offsetParent.scrollTop);
+        b&&(b.offsetParent.scrollHeight - b.offsetParent.scrollTop < 500)&&b.scrollIntoView({behaviour:"smooth"});
+    },1300)
+    }
     useEffect(()=>{
-        Socket.on("msg", function (data) {
+        Socket&&Socket.on("msg", function (data) {
             console.log(data);
-            setChats([...chats, data]);
+            scrollToBottom({});
+            setChats((prev)=>[...prev, data]);
         });
-        
-    },[chats,Socket])
+        return () => {
+            Socket&&Socket.off("msg");
+        }
+    },[])
 
     const joinLiveEvent = () => {
         setCall(true);
@@ -563,9 +598,7 @@ const Broadcastroom = () => {
         }
     }
 
-    const submitchat = (text) => {
-        Socket.emit("chat", text);
-    }
+    
 
     if (loading) {
         return <Broadcastroomwrapper>
@@ -611,6 +644,7 @@ const Broadcastroom = () => {
                         <div className="chat_header">Live Chat</div>
                         <div className="chat_container">
                             {chats.map(chat => <ChatComponent key={Math.random().toString()} chat={chat} />)}
+                            <div id="bottom"></div>
                         </div>
                         <div className="footer_chat">
                             <input

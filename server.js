@@ -42,11 +42,11 @@ const clearSubs = async ()=>{
    await x.save();
  }
 }
-app.use("/auth", auth);
-app.use("/admin", admin);
-app.use("/chat",chat);
-app.use("/video", video);
-app.use("/user", user);
+app.use("/api/v1/auth", auth);
+app.use("/api/v1/admin", admin);
+app.use("/api/v1/chat",chat);
+app.use("/api/v1/video", video);
+app.use("/api/v1/user", user);
 
 app.use(errorHandler);
 

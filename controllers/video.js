@@ -141,6 +141,8 @@ exports.sendvideoinfo = async (req, res, next) => {
         c.likedBy = [];
         c.dislikedBy = [];
     });
+    v.dislikesCount = v.dislikedBy.length;
+    v.likesCount = v.likedBy.length;
     v.viewedby = [];
     //console.log("video", v);
     res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, video: v });
@@ -550,6 +552,8 @@ exports.likecomment = async (req, res, next) => {
         c.dislikesCount = c.dislikesCount - 1;
 
     }
+    c.dislikesCount = c.dislikedBy.length;
+    c.likesCount = c.likedBy.length;
     await c.save();
     res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, isdisLiked: false, isLiked: isliked });
 }
@@ -589,18 +593,21 @@ exports.dislikecomment = async (req, res, next) => {
         await noti.remove();
     }
     if (c.dislikedBy.indexOf(req.user.id) > -1) {
-        c.dislikesCount = c.dislikesCount - 1;
+        
         c.dislikedBy.splice(c.dislikedBy.indexOf(req.user.id), 1);
+        c.dislikesCount = c.dislikedBy.length;
     }
     else {
         c.dislikedBy.push(req.user.id);
-        c.dislikesCount = c.dislikesCount + 1;
+        c.dislikesCount = c.dislikedBy.length;
         disliked = true;
     }
     if (c.likedBy.includes(req.user.id)) {
-        c.likedBy.splice(c.likedBy.indexOf(req.user.id), 1);
-        c.likesCount = c.likesCount - 1;
+        c.likedBy.splice(c.likedBy.indexOf(req.user.id), 1);       
+        c.likesCount = c.likedBy.length;
     }
+    c.dislikesCount = c.dislikedBy.length;
+    c.likesCount = c.likedBy.length;
     await c.save();
     res.status(200).json({ unseennotice:req.user.unseennotice.length,success: true, isLiked: false, isdisLiked: disliked });
 }

@@ -107,6 +107,7 @@ exports.startSocket = async function (server) {
 
     });
     socket.on("chat",function(msg){
+      console.log("chat");
        io.to(socket.liveroomid).emit("msg",{text:msg,username:socket.username,avatar:socket.avatar});
     })
     socket.on("leave", (room) => {

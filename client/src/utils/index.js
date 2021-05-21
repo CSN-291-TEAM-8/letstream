@@ -69,7 +69,7 @@ export const Connect = (endpoint, { body, ...customConfig } = {}) => {
         config.body = JSON.stringify(body);
     }
     //http://localhost:5000
-    return fetch(window.location.hostname === "localhost" ? "http://localhost:5000" : "https://letstreamiitr.herokuapp.com"+endpoint, config).then(
+    return fetch(window.location.hostname === "localhost" ? "http://localhost:5000/api/v1"+endpoint : "https://letstreamiitr.herokuapp.com/api/v1"+endpoint, config).then(
         async (res) => {
             const data = await res.json();
 
