@@ -3,6 +3,8 @@ A streaming application made with mern stack
 
 > How to operate in your local environment?
 
+### Email password and MONGOURI2(production mongouri) has been changed.
+
 ## Prerequisites
 
 * Node installed (>= v12.16.1)
