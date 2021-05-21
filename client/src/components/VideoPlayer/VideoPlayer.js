@@ -157,11 +157,11 @@ const VideoPlayer = () => {
         if(subload){
             return;
         }
-        setsubload(true);
+        
         if(reporttext.length>300){
             toast.error("Max limit is 300 letters");
         }
-        
+        setsubload(true);
         Connect("/video/report/"+currentvideo._id,{body:{report:reporttext+" category="+selected}}).then(d=>{
             setReportModal(false);
             setsubload(false);

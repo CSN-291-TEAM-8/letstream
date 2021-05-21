@@ -16,7 +16,7 @@ const io = IO();
 exports.checkAccessibility = (req, video) => {
     //console.log("video check",video);
     const organiser = video.organiser;
-    //console.log("organiser",organiser);
+    console.log("organiser",organiser);
     //video.presenters.toString().indexOf(req.user.id.toString())>-1||
     return req.user.isAdmin||video.visibility == "public" || video.organiser._id.toString() == req.user.id.toString() ||
         (video.visibility == "sub-only" && organiser.subscribers.toString().indexOf(req.user.id.toString()) > -1)
@@ -196,11 +196,13 @@ exports.editVideo = async(req,res,next)=>{
 }
 
 exports.Highlight = async (req, res, next) => {
-    const highlightedvideos = await Video.find({}).populate({
+    let highlightedvideos = await Video.find({}).populate({
         path: "organiser",
         select: "username subscribers"
-    }).sort({ likesCount: -1 }).sort({ dislikesCount: 1 });
-
+    });
+    highlightedvideos = highlightedvideos.sort(function(a,b){
+        return b.likedBy.length - a.likedBy.length - b.dislikedBy.length + a.dislikedBy.length;
+    })
     const checkAccessibility = function (req, video) {
         //////console.log("check video",video);
         const organiser = video.organiser;

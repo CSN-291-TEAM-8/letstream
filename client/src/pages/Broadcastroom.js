@@ -81,7 +81,7 @@ const Broadcastroomwrapper = styled.div`
         margin-bottom:30px;
     }
     .videowrapper{
-        width:100%;
+        width:calc(100% - 300px);
         height:100%;
         display:flex;
     }

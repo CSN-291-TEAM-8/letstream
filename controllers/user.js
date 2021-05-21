@@ -129,7 +129,7 @@ exports.getlikedVideos = async (req, res, next) => {
       path: "organiser",
       select: "username subscribers"
     }
-  }).sort("-createdAt");
+  }).sort("-createdAt").lean().exec();
   let data = likedVideos.filter(v => checkAccessibility(req, v.Videoid));
   const receiveddata = [];
   data.forEach(function (v) {
@@ -153,7 +153,7 @@ exports.getLiveVideos = async (req, res, next) => {
   let lives = await LiveVideo.find({}).populate({
     path:"organiser",
     select:"subscribers username cover"
-  }).lean().exec();
+  }).sort("-createdAt").lean().exec();
   lives = lives.filter(x=>checkAccessibility(req,x));
   lives.forEach(function(t){
     t.url = t.organiser.cover;
