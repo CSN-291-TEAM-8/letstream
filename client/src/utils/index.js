@@ -152,7 +152,7 @@ export const uploadImage = async ({ username }, file) => {
     };
 
     const {data} = await axios.post(//
-        `https://api.cloudinary.com/v1_1/dt4pc7skl/image/upload`,
+        `https://api.cloudinary.com/v1_1/dt4pc7xsd/image/upload`,
         fdata,
         config
     );
@@ -187,7 +187,7 @@ export const uploadMediaFile = async (filetype, file) => {
     };
 
     const {data} = await axios.post(//
-        `https://api.cloudinary.com/v1_1/dt4pc7skl/${filetype}/upload`,
+        `https://api.cloudinary.com/v1_1/dt4pc7xsd/${filetype}/upload`,
         fdata,
         config
     );
